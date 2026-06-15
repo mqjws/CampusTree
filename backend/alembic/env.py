@@ -5,6 +5,7 @@ from sqlalchemy import pool
 from sqlmodel import SQLModel
 
 from alembic import context
+import app.models  # noqa: F401
 from app.core.config import settings
 
 # this is the Alembic Config object, which provides
