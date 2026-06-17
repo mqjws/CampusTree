@@ -5,6 +5,8 @@ from sqlalchemy import Column, DateTime
 from sqlmodel import Field, Relationship, SQLModel
 
 if TYPE_CHECKING:
+    from app.models.comment import Comment
+    from app.models.like import Like
     from app.models.post import Post
 
 
@@ -30,4 +32,6 @@ class User(SQLModel, table=True):
         sa_column=Column(DateTime(timezone=True), nullable=False),
     )
 
-    posts: list["Post"] = Relationship(back_populates="author")
+    posts: list["Post"] = Relationship(back_populates="author", cascade_delete=True)
+    comments: list["Comment"] = Relationship(back_populates="author", cascade_delete=True)
+    likes: list["Like"] = Relationship(back_populates="user", cascade_delete=True)
