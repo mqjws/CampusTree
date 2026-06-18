@@ -1,9 +1,9 @@
 from sqlmodel import Session, func, select
 
+from app.core.security import get_password_hash, verify_password
 from app.models.comment import Comment
 from app.models.like import Like
 from app.models.post import Post
-from app.core.security import get_password_hash
 from app.models.user import User
 from app.schemas.user import UserCreate
 
@@ -76,3 +76,16 @@ def get_user_stats(session: Session, user_id: int) -> dict[str, int]:
         "comment_count": int(comment_count),
         "like_count": int(like_count),
     }
+
+
+def update_user_password(
+    session: Session, user: User, old_password: str, new_password: str
+) -> tuple[bool, str]:
+    if not verify_password(old_password, user.hashed_password):
+        return False, "invalid current password"
+
+    user.hashed_password = get_password_hash(new_password)
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+    return True, "password updated"

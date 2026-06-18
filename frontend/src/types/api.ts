@@ -32,6 +32,11 @@ export interface RegisterPayload {
   password: string
 }
 
+export interface UpdatePasswordPayload {
+  old_password: string
+  new_password: string
+}
+
 export interface LoginDto {
   access_token: string
   token_type: string

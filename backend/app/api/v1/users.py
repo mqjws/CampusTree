@@ -11,6 +11,7 @@ from app.schemas.user import (
     UserCreate,
     UserLogin,
     UserLoginRead,
+    UserPasswordUpdate,
     UserPostListRead,
     UserRead,
     UserStatsRead,
@@ -19,10 +20,11 @@ from app.services.user_service import (
     create_user,
     get_comments_by_user_id,
     get_posts_by_user_id,
-    get_user_stats,
     get_user_by_account,
     get_user_by_email,
     get_user_by_username,
+    get_user_stats,
+    update_user_password,
 )
 
 
@@ -72,9 +74,7 @@ def read_current_user(current_user: CurrentUserDep):
 @router.get("/me/posts")
 def read_my_posts(session: SessionDep, current_user: CurrentUserDep):
     posts = get_posts_by_user_id(session, current_user.id)
-    payload = UserPostListRead(
-        items=[PostRead.model_validate(post) for post in posts]
-    )
+    payload = UserPostListRead(items=[PostRead.model_validate(post) for post in posts])
     return success(payload.model_dump(mode="json"))
 
 
@@ -92,3 +92,21 @@ def read_my_stats(session: SessionDep, current_user: CurrentUserDep):
     stats = get_user_stats(session, current_user.id)
     payload = UserStatsRead(**stats)
     return success(payload.model_dump(mode="json"))
+
+
+@router.put("/me/password")
+def update_my_password(
+    payload: UserPasswordUpdate,
+    session: SessionDep,
+    current_user: CurrentUserDep,
+):
+    updated, message = update_user_password(
+        session, current_user, payload.old_password, payload.new_password
+    )
+    if not updated:
+        return JSONResponse(
+            status_code=400,
+            content=error(message=message, code=400),
+        )
+
+    return success({"updated": True}, message=message)
