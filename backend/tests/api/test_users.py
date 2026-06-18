@@ -199,3 +199,27 @@ def test_read_my_stats_success(client: TestClient, session: Session):
     assert body["data"]["post_count"] == 1
     assert body["data"]["comment_count"] == 1
     assert body["data"]["like_count"] == 1
+
+
+def test_update_my_password_success(client: TestClient):
+    token = authenticate_user(client, "passworduser", "passworduser@example.com")
+
+    response = client.put(
+        "/api/v1/users/me/password",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "old_password": "password123",
+            "new_password": "newpassword123",
+        },
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["code"] == 200
+    assert body["message"] == "password updated"
+
+    login_response = client.post(
+        "/api/v1/users/login",
+        json={"account": "passworduser", "password": "newpassword123"},
+    )
+    assert login_response.status_code == 200

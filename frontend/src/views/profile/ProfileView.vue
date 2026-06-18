@@ -1,15 +1,56 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import type { FormInstance, FormRules } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { EditPen, MessageBox, Setting, Tickets } from '@element-plus/icons-vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import CommentList from '@/components/comment/CommentList.vue'
 import PostCard from '@/components/post/PostCard.vue'
+import { useAuthStore } from '@/stores/modules/auth'
 import { useUserStore } from '@/stores/modules/user'
+import * as userApi from '@/api/user'
+
+interface PasswordForm {
+  oldPassword: string
+  newPassword: string
+  confirmPassword: string
+}
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
+const authStore = useAuthStore()
+const passwordFormRef = ref<FormInstance>()
+const passwordSubmitting = ref(false)
+
+const passwordForm = reactive<PasswordForm>({
+  oldPassword: '',
+  newPassword: '',
+  confirmPassword: '',
+})
+
+const passwordRules: FormRules<PasswordForm> = {
+  oldPassword: [{ required: true, message: '请输入当前密码', trigger: 'blur' }],
+  newPassword: [
+    { required: true, message: '请输入新密码', trigger: 'blur' },
+    { min: 6, message: '新密码至少 6 位', trigger: 'blur' },
+  ],
+  confirmPassword: [
+    { required: true, message: '请再次输入新密码', trigger: 'blur' },
+    {
+      validator: (_rule, value: string, callback) => {
+        if (value !== passwordForm.newPassword) {
+          callback(new Error('两次输入的新密码不一致'))
+          return
+        }
+
+        callback()
+      },
+      trigger: ['blur', 'change'],
+    },
+  ],
+}
 
 const section = computed(() => {
   if (route.path === '/profile/posts') {
@@ -32,7 +73,7 @@ const sectionCopy = computed(() => {
     overview: '用户基础信息、统计数据、我的帖子和我的评论都已接入真实接口。',
     posts: '这里展示当前登录用户发布的真实帖子列表。',
     comments: '这里展示当前登录用户发表的真实评论列表。',
-    settings: '设置页结构保留，等待后续接入账号设置类接口。',
+    settings: '设置页已补齐最小可用功能：修改密码、清理缓存、退出登录。',
   }
 
   return map[section.value]
@@ -47,6 +88,55 @@ onMounted(() => {
 
 function openPost(id: number) {
   router.push(`/post/${id}`)
+}
+
+async function handleUpdatePassword() {
+  const isValid = await passwordFormRef.value?.validate().catch(() => false)
+
+  if (!isValid) {
+    return
+  }
+
+  passwordSubmitting.value = true
+
+  try {
+    await userApi.updateMyPassword({
+      old_password: passwordForm.oldPassword,
+      new_password: passwordForm.newPassword,
+    })
+
+    passwordForm.oldPassword = ''
+    passwordForm.newPassword = ''
+    passwordForm.confirmPassword = ''
+    ElMessage.success('密码修改成功')
+  } catch {
+    ElMessage.error('密码修改失败，请确认当前密码是否正确')
+  } finally {
+    passwordSubmitting.value = false
+  }
+}
+
+function handleClearCache() {
+  localStorage.removeItem('campus_tree_token')
+  authStore.clearAuth()
+  ElMessage.success('本地缓存已清理')
+  router.push('/login')
+}
+
+async function handleLogout() {
+  try {
+    await ElMessageBox.confirm('确认退出当前登录状态吗？', '退出登录', {
+      type: 'warning',
+      confirmButtonText: '退出',
+      cancelButtonText: '取消',
+    })
+
+    authStore.clearAuth()
+    ElMessage.success('已退出登录')
+    router.push('/login')
+  } catch {
+    return
+  }
 }
 </script>
 
@@ -154,18 +244,47 @@ function openPost(id: number) {
     <section v-else class="profile-settings">
       <article class="profile-panel">
         <h2>账号设置</h2>
-        <p>设置页结构保留不变，等待后续接入修改密码、清理缓存等真实接口。</p>
+        <p>当前可直接修改密码、清理缓存并退出登录。</p>
       </article>
+
+      <article class="profile-setting-card">
+        <h3>修改密码</h3>
+        <el-form
+          ref="passwordFormRef"
+          :model="passwordForm"
+          :rules="passwordRules"
+          label-position="top"
+        >
+          <el-form-item label="当前密码" prop="oldPassword">
+            <el-input v-model="passwordForm.oldPassword" type="password" show-password />
+          </el-form-item>
+          <el-form-item label="新密码" prop="newPassword">
+            <el-input v-model="passwordForm.newPassword" type="password" show-password />
+          </el-form-item>
+          <el-form-item label="确认新密码" prop="confirmPassword">
+            <el-input v-model="passwordForm.confirmPassword" type="password" show-password />
+          </el-form-item>
+          <el-button
+            type="primary"
+            size="large"
+            :loading="passwordSubmitting"
+            @click="handleUpdatePassword"
+          >
+            保存新密码
+          </el-button>
+        </el-form>
+      </article>
+
       <div class="profile-settings__grid">
         <article class="profile-setting-card">
-          <h3>修改密码</h3>
-          <p>后端文档中尚未明确提供修改密码接口。</p>
-          <el-button plain size="large">待接口补齐</el-button>
-        </article>
-        <article class="profile-setting-card">
           <h3>清理缓存</h3>
-          <p>前端本地可实现，但暂未纳入当前联调范围。</p>
-          <el-button plain size="large">保留结构</el-button>
+          <p>清理当前浏览器中的本地登录缓存，并返回登录页。</p>
+          <el-button plain size="large" @click="handleClearCache">清理缓存</el-button>
+        </article>
+        <article class="profile-setting-card profile-setting-card--danger">
+          <h3>退出登录</h3>
+          <p>清除当前登录状态并返回登录页。</p>
+          <el-button type="danger" size="large" @click="handleLogout">退出登录</el-button>
         </article>
       </div>
     </section>
@@ -270,6 +389,10 @@ function openPost(id: number) {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-16);
+}
+
+.profile-setting-card--danger {
+  border-color: rgba(239, 68, 68, 0.24);
 }
 
 @media (max-width: 767px) {

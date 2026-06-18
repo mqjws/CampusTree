@@ -21,6 +21,11 @@ class UserLogin(BaseModel):
     password: str = Field(min_length=6, max_length=72)
 
 
+class UserPasswordUpdate(BaseModel):
+    old_password: str = Field(min_length=6, max_length=72)
+    new_password: str = Field(min_length=6, max_length=72)
+
+
 class UserRead(BaseModel):
     id: int
     username: str

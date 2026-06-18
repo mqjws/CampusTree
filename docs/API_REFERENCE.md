@@ -264,6 +264,42 @@ Errors:
 |---:|---|
 | 401 | Authentication error |
 
+### Update Password
+
+```http
+PUT /api/v1/users/me/password
+```
+
+JWT: Yes
+
+Request body:
+
+```json
+{
+  "old_password": "password123",
+  "new_password": "newpassword123"
+}
+```
+
+Response body:
+
+```json
+{
+  "code": 200,
+  "message": "password updated",
+  "data": {
+    "updated": true
+  }
+}
+```
+
+Errors:
+
+| Status | Message |
+|---:|---|
+| 400 | `invalid current password` |
+| 401 | Authentication error |
+
 ## Post APIs
 
 ### List Posts
