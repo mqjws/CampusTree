@@ -32,7 +32,7 @@ defineProps<{
     <footer class="comment-item__footer">
       <span>
         <el-icon><ChatDotRound /></el-icon>
-        评论占位模式
+        评论内容
       </span>
     </footer>
   </article>

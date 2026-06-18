@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { FormInstance, FormRules } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import { reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AuthLayout from '@/components/layout/AuthLayout.vue'
@@ -15,11 +16,10 @@ const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
 const formRef = ref<FormInstance>()
-const submitting = ref(false)
 
 const form = reactive<LoginForm>({
-  account: 'campustree_demo',
-  password: 'demo123456',
+  account: '',
+  password: '',
   rememberMe: true,
 })
 
@@ -44,8 +44,8 @@ const highlights = [
     description: '认证流程保持轻量，适合在课堂间隙或通勤中快速进入。',
   },
   {
-    title: '后续接 API',
-    description: '当前提交仅使用占位数据，后续会替换成真实登录接口。',
+    title: '真实联调',
+    description: '当前表单已改为真实登录接口，请使用后端可用账号进行测试。',
   },
 ]
 
@@ -56,15 +56,18 @@ async function handleSubmit() {
     return
   }
 
-  submitting.value = true
+  try {
+    await authStore.login({
+      account: form.account,
+      password: form.password,
+    })
 
-  window.setTimeout(async () => {
-    authStore.setToken('mock-campus-tree-token')
-
+    ElMessage.success('登录成功')
     const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/'
     await router.push(redirect)
-    submitting.value = false
-  }, 500)
+  } catch {
+    ElMessage.error('登录失败，请检查账号或密码')
+  }
 }
 </script>
 
@@ -72,13 +75,13 @@ async function handleSubmit() {
   <AuthLayout
     caption="Login"
     title="回到 CampusTree"
-    description="登录后即可进入匿名校园社区。当前页面使用占位数据模拟提交流程，后续再接入真实认证接口。"
+    description="登录后即可进入匿名校园社区。当前页面已接入真实登录接口，但整体 UI 风格保持不变。"
     :highlights="highlights"
   >
     <section class="auth-card">
       <div class="auth-card__header">
         <h2>登录</h2>
-        <p>使用演示账号体验页面流程，当前不会请求后端。</p>
+        <p>输入后端已存在的账号信息完成联调。</p>
       </div>
 
       <el-form ref="formRef" :model="form" :rules="rules" label-position="top" @submit.prevent>
@@ -105,17 +108,12 @@ async function handleSubmit() {
           class="auth-card__submit"
           type="primary"
           size="large"
-          :loading="submitting"
+          :loading="authStore.loading"
           @click="handleSubmit"
         >
           登录 CampusTree
         </el-button>
       </el-form>
-
-      <div class="auth-card__hint">
-        <span>演示账号：`campustree_demo`</span>
-        <span>演示密码：`demo123456`</span>
-      </div>
     </section>
   </AuthLayout>
 </template>
@@ -167,14 +165,6 @@ async function handleSubmit() {
 
 .auth-card__submit {
   width: 100%;
-}
-
-.auth-card__hint {
-  display: grid;
-  gap: var(--space-8);
-  margin-top: var(--space-16);
-  color: var(--color-text-secondary);
-  font-size: 13px;
 }
 
 @media (max-width: 767px) {

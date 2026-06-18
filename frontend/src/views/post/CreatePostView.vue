@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import type { FormInstance, FormRules } from 'element-plus'
-import { reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
+import { reactive, ref } from 'vue'
 import AppLayout from '@/components/layout/AppLayout.vue'
-import { createPostCategories, mockProfile } from '@/mock/community'
+import { createPostCategories } from '@/mock/community'
+import { usePostStore } from '@/stores/modules/post'
+import { useUserStore } from '@/stores/modules/user'
 
 interface CreatePostForm {
   title: string
@@ -12,13 +14,14 @@ interface CreatePostForm {
   allowComments: boolean
 }
 
+const postStore = usePostStore()
+const userStore = useUserStore()
 const formRef = ref<FormInstance>()
-const submitting = ref(false)
 
 const form = reactive<CreatePostForm>({
-  title: '今晚操场夜跑的人比想象中多',
+  title: '',
   category: createPostCategories[0],
-  content: '这里是占位内容，用于演示发布页的布局、表单和文案结构。',
+  content: '',
   allowComments: true,
 })
 
@@ -41,23 +44,25 @@ async function handleSubmit() {
     return
   }
 
-  submitting.value = true
-
-  window.setTimeout(() => {
-    submitting.value = false
-    ElMessage.success('当前为占位提交流程，后续将接入真实发帖接口。')
-  }, 500)
+  try {
+    await postStore.createPost(form.title, form.content)
+    ElMessage.success('帖子创建成功')
+    form.title = ''
+    form.content = ''
+  } catch {
+    ElMessage.error('帖子创建失败')
+  }
 }
 </script>
 
 <template>
   <AppLayout
     title="发布一条新内容"
-    description="当前页面完成发帖流程的结构、表单和辅助说明布局。后续只需要替换为真实接口提交与错误处理逻辑。"
+    description="当前页面已接入真实创建帖子接口，UI 结构和设计系统保持不变。"
     :user-card="{
-      nickname: mockProfile.nickname,
-      userId: mockProfile.userId,
-      tagline: mockProfile.tagline,
+      nickname: userStore.profile.nickname,
+      userId: userStore.profile.userId,
+      tagline: userStore.profile.tagline,
     }"
   >
     <section class="create-card">
@@ -91,38 +96,29 @@ async function handleSubmit() {
         <div class="create-card__options">
           <div>
             <h2>评论开关</h2>
-            <p>这里只是视觉与表单结构占位，真实逻辑后续接入。</p>
+            <p>当前后端文档暂未提供开关字段，这里仅保留 UI 状态。</p>
           </div>
           <el-switch v-model="form.allowComments" />
         </div>
 
         <div class="create-card__actions">
           <el-button size="large">保存草稿</el-button>
-          <el-button type="primary" size="large" :loading="submitting" @click="handleSubmit">
+          <el-button
+            type="primary"
+            size="large"
+            :loading="postStore.creating"
+            @click="handleSubmit"
+          >
             发布内容
           </el-button>
         </div>
       </el-form>
     </section>
-
-    <template #sidebar>
-      <div class="create-sidebar">
-        <section class="sidebar-card">
-          <h2>发帖建议</h2>
-          <ul>
-            <li>标题尽量直接表达核心信息。</li>
-            <li>正文保留足够上下文，便于后续评论展开。</li>
-            <li>本阶段仍为占位流程，不会写入后端。</li>
-          </ul>
-        </section>
-      </div>
-    </template>
   </AppLayout>
 </template>
 
 <style scoped>
-.create-card,
-.sidebar-card {
+.create-card {
   padding: var(--space-24);
   border: 1px solid rgba(229, 231, 235, 0.76);
   border-radius: var(--radius-16);
@@ -147,16 +143,14 @@ async function handleSubmit() {
   background: linear-gradient(180deg, #ffffff 0%, #f8fcfa 100%);
 }
 
-.create-card__options h2,
-.sidebar-card h2 {
+.create-card__options h2 {
   margin-bottom: var(--space-8);
   color: var(--color-text-primary);
   font-size: 18px;
   font-weight: 600;
 }
 
-.create-card__options p,
-.sidebar-card li {
+.create-card__options p {
   color: var(--color-text-secondary);
   font-size: 14px;
   line-height: 1.7;
@@ -168,15 +162,8 @@ async function handleSubmit() {
   gap: var(--space-12);
 }
 
-.sidebar-card ul {
-  display: grid;
-  gap: var(--space-12);
-  padding-left: 20px;
-}
-
 @media (max-width: 767px) {
-  .create-card,
-  .sidebar-card {
+  .create-card {
     padding: var(--space-16);
   }
 

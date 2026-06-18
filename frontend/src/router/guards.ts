@@ -7,6 +7,11 @@ export function setupRouterGuards(router: Router) {
 
     if (!authStore.initialized) {
       authStore.restoreAuth()
+      if (authStore.isAuthenticated) {
+        await authStore.fetchCurrentUser().catch(() => {
+          authStore.clearAuth()
+        })
+      }
     }
 
     const requiresAuth = Boolean(to.meta.requiresAuth)
