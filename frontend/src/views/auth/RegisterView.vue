@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { FormInstance, FormRules } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import { computed, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import AuthLayout from '@/components/layout/AuthLayout.vue'
@@ -16,13 +17,12 @@ interface RegisterForm {
 const router = useRouter()
 const authStore = useAuthStore()
 const formRef = ref<FormInstance>()
-const submitting = ref(false)
 
 const form = reactive<RegisterForm>({
-  username: 'campus_new_user',
-  email: 'demo@campustree.local',
-  password: 'demo123456',
-  confirmPassword: 'demo123456',
+  username: '',
+  email: '',
+  password: '',
+  confirmPassword: '',
   agree: true,
 })
 
@@ -59,7 +59,7 @@ const rules: FormRules<RegisterForm> = {
     {
       validator: (_rule, value: boolean, callback) => {
         if (!value) {
-          callback(new Error('请先确认继续使用当前演示流程'))
+          callback(new Error('请确认后再继续'))
           return
         }
 
@@ -72,16 +72,16 @@ const rules: FormRules<RegisterForm> = {
 
 const highlights = [
   {
-    title: '最少阻力',
-    description: '注册页先验证表单和交互节奏，再在下一阶段接入真实账户创建逻辑。',
+    title: '真实注册',
+    description: '当前注册表单已接入真实后端接口。',
   },
   {
     title: '设计一致',
-    description: '表单、按钮、间距和文案层级都沿用 CampusTree 的设计系统令牌。',
+    description: '页面仍沿用 CampusTree 认证布局和设计系统。',
   },
   {
-    title: '安全占位',
-    description: '当前不会提交任何真实数据，仅用于演示页面行为和路由跳转。',
+    title: '下一步登录',
+    description: '注册成功后会跳转到登录页，使用刚创建的账号继续联调。',
   },
 ]
 
@@ -92,13 +92,18 @@ async function handleSubmit() {
     return
   }
 
-  submitting.value = true
+  try {
+    await authStore.register({
+      username: form.username,
+      email: form.email,
+      password: form.password,
+    })
 
-  window.setTimeout(async () => {
-    authStore.setToken('mock-campus-tree-token')
-    await router.push('/')
-    submitting.value = false
-  }, 500)
+    ElMessage.success('注册成功，请登录')
+    await router.push('/login')
+  } catch {
+    ElMessage.error('注册失败，请检查用户名或邮箱是否已存在')
+  }
 }
 </script>
 
@@ -106,13 +111,13 @@ async function handleSubmit() {
   <AuthLayout
     caption="Register"
     title="创建你的匿名入口"
-    description="先完成一版完整的注册页结构、表单校验和响应式布局，后续再接入真实注册 API。"
+    description="先完成账号创建，再回到登录页进入 CampusTree。当前页面已接入真实注册接口。"
     :highlights="highlights"
   >
     <section class="auth-card">
       <div class="auth-card__header">
         <h2>注册</h2>
-        <p>当前表单仅用于占位演示，提交后会模拟进入系统。</p>
+        <p>提交后会调用后端注册接口。</p>
       </div>
 
       <el-form ref="formRef" :model="form" :rules="rules" label-position="top" @submit.prevent>
@@ -147,7 +152,7 @@ async function handleSubmit() {
         </div>
 
         <el-form-item prop="agree">
-          <el-checkbox v-model="form.agree" label="我已知晓当前为演示注册流程，不会创建真实账户" />
+          <el-checkbox v-model="form.agree" label="我已确认使用当前信息创建账户" />
         </el-form-item>
 
         <div class="auth-card__footer">
@@ -156,7 +161,7 @@ async function handleSubmit() {
             class="auth-card__submit"
             type="primary"
             size="large"
-            :loading="submitting"
+            :loading="authStore.loading"
             @click="handleSubmit"
           >
             创建账号

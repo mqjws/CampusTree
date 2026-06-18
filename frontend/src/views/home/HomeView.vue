@@ -1,25 +1,35 @@
 <script setup lang="ts">
 import { Bell, TrendCharts } from '@element-plus/icons-vue'
+import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import PostCard from '@/components/post/PostCard.vue'
-import { mockNotices, mockPosts, mockProfile, mockTopics } from '@/mock/community'
+import { mockNotices, mockTopics } from '@/mock/community'
+import { usePostStore } from '@/stores/modules/post'
+import { useUserStore } from '@/stores/modules/user'
 
 const router = useRouter()
+const postStore = usePostStore()
+const userStore = useUserStore()
 
 function openPost(id: number) {
   router.push(`/post/${id}`)
 }
+
+onMounted(() => {
+  postStore.fetchPosts().catch(() => undefined)
+  userStore.fetchCurrentUser().catch(() => undefined)
+})
 </script>
 
 <template>
   <AppLayout
     title="校园匿名流"
-    description="基于 V1 信息流结构，当前首页展示占位帖子数据、基础筛选入口和侧栏信息块，为后续真实帖子列表接入做准备。"
+    description="基于 V1 信息流结构，当前首页已接入真实帖子列表接口；右侧话题和公告仍保留为本地占位数据。"
     :user-card="{
-      nickname: mockProfile.nickname,
-      userId: mockProfile.userId,
-      tagline: mockProfile.tagline,
+      nickname: userStore.profile.nickname,
+      userId: userStore.profile.userId,
+      tagline: userStore.profile.tagline,
     }"
   >
     <section class="home-toolbar">
@@ -31,8 +41,18 @@ function openPost(id: number) {
       </el-button>
     </section>
 
-    <section class="home-list">
-      <PostCard v-for="post in mockPosts" :key="post.id" :post="post" @select="openPost" />
+    <section v-loading="postStore.loading" class="home-list">
+      <el-empty
+        v-if="!postStore.loading && postStore.postList.length === 0"
+        description="还没有帖子数据"
+      />
+      <PostCard
+        v-for="post in postStore.postList"
+        v-else
+        :key="post.id"
+        :post="post"
+        @select="openPost"
+      />
     </section>
 
     <template #sidebar>

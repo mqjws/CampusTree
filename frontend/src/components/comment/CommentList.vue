@@ -12,7 +12,7 @@ defineProps<{
   <section class="comment-list">
     <header class="comment-list__header">
       <h2>{{ title || `评论 (${comments.length})` }}</h2>
-      <p>当前为占位评论列表，后续接入真实评论接口。</p>
+      <p>当前评论列表已接入真实接口。</p>
     </header>
 
     <div class="comment-list__items">
