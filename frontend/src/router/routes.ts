@@ -3,16 +3,19 @@ import type { RouteRecordRaw } from 'vue-router'
 const systemPage = () => import('@/views/system/SystemPageView.vue')
 const loginPage = () => import('@/views/auth/LoginView.vue')
 const registerPage = () => import('@/views/auth/RegisterView.vue')
+const homePage = () => import('@/views/home/HomeView.vue')
+const postDetailPage = () => import('@/views/post/PostDetailView.vue')
+const createPostPage = () => import('@/views/post/CreatePostView.vue')
+const profilePage = () => import('@/views/profile/ProfileView.vue')
 
 export const routes: RouteRecordRaw[] = [
   {
     path: '/',
     name: 'Home',
-    component: systemPage,
+    component: homePage,
     meta: {
       title: 'CampusTree',
       requiresAuth: true,
-      placeholder: 'Home',
     },
   },
   {
@@ -36,61 +39,55 @@ export const routes: RouteRecordRaw[] = [
   {
     path: '/post/:id',
     name: 'PostDetail',
-    component: systemPage,
+    component: postDetailPage,
     meta: {
       title: '帖子详情 - CampusTree',
       requiresAuth: true,
-      placeholder: 'PostDetail',
     },
   },
   {
     path: '/create',
     name: 'CreatePost',
-    component: systemPage,
+    component: createPostPage,
     meta: {
       title: '发布帖子 - CampusTree',
       requiresAuth: true,
-      placeholder: 'CreatePost',
     },
   },
   {
     path: '/profile',
     name: 'Profile',
-    component: systemPage,
+    component: profilePage,
     meta: {
       title: '用户中心 - CampusTree',
       requiresAuth: true,
-      placeholder: 'Profile',
     },
   },
   {
     path: '/profile/posts',
     name: 'MyPosts',
-    component: systemPage,
+    component: profilePage,
     meta: {
       title: '我的帖子 - CampusTree',
       requiresAuth: true,
-      placeholder: 'MyPosts',
     },
   },
   {
     path: '/profile/comments',
     name: 'MyComments',
-    component: systemPage,
+    component: profilePage,
     meta: {
       title: '我的评论 - CampusTree',
       requiresAuth: true,
-      placeholder: 'MyComments',
     },
   },
   {
     path: '/profile/settings',
     name: 'Settings',
-    component: systemPage,
+    component: profilePage,
     meta: {
       title: '设置 - CampusTree',
       requiresAuth: true,
-      placeholder: 'Settings',
     },
   },
   {
