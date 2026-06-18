@@ -160,6 +160,110 @@ Errors:
 | 401 | `invalid token` |
 | 401 | `token expired` |
 
+### My Posts
+
+```http
+GET /api/v1/users/me/posts
+```
+
+JWT: Yes
+
+Request body: None
+
+Response body:
+
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "items": [
+      {
+        "id": 1,
+        "title": "My first post",
+        "content": "post body",
+        "author_id": 1,
+        "created_at": "2026-06-17T10:00:00Z",
+        "updated_at": "2026-06-17T10:00:00Z"
+      }
+    ]
+  }
+}
+```
+
+Errors:
+
+| Status | Message |
+|---:|---|
+| 401 | Authentication error |
+
+### My Comments
+
+```http
+GET /api/v1/users/me/comments
+```
+
+JWT: Yes
+
+Request body: None
+
+Response body:
+
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "items": [
+      {
+        "id": 1,
+        "content": "Nice post",
+        "author_id": 1,
+        "post_id": 1,
+        "created_at": "2026-06-17T10:00:00Z",
+        "updated_at": "2026-06-17T10:00:00Z"
+      }
+    ]
+  }
+}
+```
+
+Errors:
+
+| Status | Message |
+|---:|---|
+| 401 | Authentication error |
+
+### My Stats
+
+```http
+GET /api/v1/users/me/stats
+```
+
+JWT: Yes
+
+Request body: None
+
+Response body:
+
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "post_count": 1,
+    "comment_count": 1,
+    "like_count": 1
+  }
+}
+```
+
+Errors:
+
+| Status | Message |
+|---:|---|
+| 401 | Authentication error |
+
 ## Post APIs
 
 ### List Posts

@@ -1,4 +1,4 @@
-import type { CommentRecord, PostRecord, ProfileRecord } from '@/types/content'
+import type { CommentRecord, PostRecord, ProfileRecord, ProfileStats } from '@/types/content'
 import type { CommentDto, PostDto, UserDto } from '@/types/api'
 import { formatFullTime, formatRelativeTime } from './format'
 
@@ -8,14 +8,14 @@ function pickEmoji(id: number): string {
   return fallbackEmojis[id % fallbackEmojis.length]
 }
 
-export function mapUserToProfile(user: UserDto | null): ProfileRecord {
+export function mapUserToProfile(user: UserDto | null, stats?: ProfileStats): ProfileRecord {
   if (!user) {
     return {
       userId: '#----',
       nickname: '匿名同学',
       joinedAt: '--',
       tagline: '登录后查看你的账户信息与内容记录。',
-      stats: {
+      stats: stats || {
         posts: 0,
         comments: 0,
         likes: 0,
@@ -27,8 +27,8 @@ export function mapUserToProfile(user: UserDto | null): ProfileRecord {
     userId: `#${user.id}`,
     nickname: user.username,
     joinedAt: formatFullTime(user.created_at),
-    tagline: '当前用户数据来自真实接口，统计数据仍待后端补充。',
-    stats: {
+    tagline: '当前用户数据与统计信息均来自真实接口。',
+    stats: stats || {
       posts: 0,
       comments: 0,
       likes: 0,

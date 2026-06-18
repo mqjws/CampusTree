@@ -1,7 +1,7 @@
 from fastapi.testclient import TestClient
 from sqlmodel import Session, select
 
-from app.models import User
+from app.models import Comment, Like, Post, User
 
 
 def register_payload(
@@ -100,3 +100,102 @@ def test_read_current_user_success(client: TestClient):
     assert body["code"] == 200
     assert body["data"]["username"] == "meuser"
     assert body["data"]["email"] == "me@example.com"
+
+
+def authenticate_user(client: TestClient, username: str, email: str) -> str:
+    client.post(
+        "/api/v1/users/register",
+        json=register_payload(username=username, email=email),
+    )
+    login_response = client.post(
+        "/api/v1/users/login",
+        json={"account": username, "password": "password123"},
+    )
+    return login_response.json()["data"]["access_token"]
+
+
+def test_read_my_posts_success(client: TestClient, session: Session):
+    token = authenticate_user(client, "postowner", "postowner@example.com")
+    user = session.exec(select(User).where(User.username == "postowner")).first()
+    assert user is not None
+
+    post = Post(title="My first post", content="post body", author_id=user.id)
+    session.add(post)
+    session.commit()
+
+    response = client.get(
+        "/api/v1/users/me/posts",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["code"] == 200
+    assert len(body["data"]["items"]) == 1
+    assert body["data"]["items"][0]["title"] == "My first post"
+
+
+def test_read_my_comments_success(client: TestClient, session: Session):
+    token = authenticate_user(client, "commentowner", "commentowner@example.com")
+    user = session.exec(select(User).where(User.username == "commentowner")).first()
+    assert user is not None
+
+    post = Post(title="Post for comment", content="post body", author_id=user.id)
+    session.add(post)
+    session.commit()
+    session.refresh(post)
+
+    comment = Comment(content="My comment", author_id=user.id, post_id=post.id)
+    session.add(comment)
+    session.commit()
+
+    response = client.get(
+        "/api/v1/users/me/comments",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["code"] == 200
+    assert len(body["data"]["items"]) == 1
+    assert body["data"]["items"][0]["content"] == "My comment"
+
+
+def test_read_my_stats_success(client: TestClient, session: Session):
+    token = authenticate_user(client, "statsuser", "statsuser@example.com")
+    user = session.exec(select(User).where(User.username == "statsuser")).first()
+    assert user is not None
+
+    post = Post(title="Stats post", content="post body", author_id=user.id)
+    session.add(post)
+    session.commit()
+    session.refresh(post)
+
+    comment = Comment(content="Stats comment", author_id=user.id, post_id=post.id)
+    session.add(comment)
+    session.commit()
+
+    liker = User(
+        username="liker",
+        email="liker@example.com",
+        hashed_password="hashed",
+    )
+    session.add(liker)
+    session.commit()
+    session.refresh(liker)
+
+    like = Like(user_id=liker.id, post_id=post.id)
+    session.add(like)
+    session.commit()
+
+    response = client.get(
+        "/api/v1/users/me/stats",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["code"] == 200
+    assert body["data"]["post_count"] == 1
+    assert body["data"]["comment_count"] == 1
+    assert body["data"]["like_count"] == 1
