@@ -1,0 +1,18 @@
+body {
+  color: var(--color-text-primary);
+  background: var(--color-bg-page);
+  font-family:
+    'Inter',
+    'PingFang SC',
+    'Noto Sans SC',
+    'Microsoft YaHei',
+    sans-serif;
+  line-height: 1.5;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#app {
+  min-height: 100vh;
+}
