@@ -2,6 +2,9 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.schemas.comment import CommentRead
+from app.schemas.post import PostRead
+
 
 class UserCreate(BaseModel):
     username: str = Field(min_length=3, max_length=50)
@@ -34,3 +37,17 @@ class UserLoginRead(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: UserRead
+
+
+class UserPostListRead(BaseModel):
+    items: list[PostRead]
+
+
+class UserCommentListRead(BaseModel):
+    items: list[CommentRead]
+
+
+class UserStatsRead(BaseModel):
+    post_count: int
+    comment_count: int
+    like_count: int

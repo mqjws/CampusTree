@@ -5,15 +5,11 @@ import { useRoute, useRouter } from 'vue-router'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import CommentList from '@/components/comment/CommentList.vue'
 import PostCard from '@/components/post/PostCard.vue'
-import { useCommentStore } from '@/stores/modules/comment'
-import { usePostStore } from '@/stores/modules/post'
 import { useUserStore } from '@/stores/modules/user'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
-const postStore = usePostStore()
-const commentStore = useCommentStore()
 
 const section = computed(() => {
   if (route.path === '/profile/posts') {
@@ -33,10 +29,10 @@ const section = computed(() => {
 
 const sectionCopy = computed(() => {
   const map = {
-    overview: '当前仅接入真实用户基础信息，内容统计接口仍待后端补充。',
-    posts: '当前后端文档未提供“我的帖子”接口，这里仍复用已加载帖子列表作为结构展示。',
-    comments: '当前后端文档未提供“我的评论”接口，这里保留评论区结构，后续待补齐。',
-    settings: '设置页结构已完成，后续接入修改密码、清理缓存等真实接口。',
+    overview: '用户基础信息、统计数据、我的帖子和我的评论都已接入真实接口。',
+    posts: '这里展示当前登录用户发布的真实帖子列表。',
+    comments: '这里展示当前登录用户发表的真实评论列表。',
+    settings: '设置页结构保留，等待后续接入账号设置类接口。',
   }
 
   return map[section.value]
@@ -44,8 +40,9 @@ const sectionCopy = computed(() => {
 
 onMounted(() => {
   userStore.fetchCurrentUser().catch(() => undefined)
-  postStore.fetchPosts().catch(() => undefined)
-  commentStore.fetchComments(1).catch(() => undefined)
+  userStore.fetchMyPosts().catch(() => undefined)
+  userStore.fetchMyComments().catch(() => undefined)
+  userStore.fetchMyStats().catch(() => undefined)
 })
 
 function openPost(id: number) {
@@ -127,10 +124,12 @@ function openPost(id: number) {
     <section v-if="section === 'overview'" class="profile-panels">
       <article class="profile-panel">
         <h2>当前联调状态</h2>
-        <p>用户基础信息来自真实 `/users/me` 接口，其余聚合数据仍等待后端补齐。</p>
+        <p>用户中心的核心展示数据已切换到真实后端接口。</p>
       </article>
+      <el-empty v-if="userStore.myPosts.length === 0" description="当前用户还没有发布帖子" />
       <PostCard
-        v-for="post in postStore.postList.slice(0, 2)"
+        v-for="post in userStore.myPosts.slice(0, 2)"
+        v-else
         :key="post.id"
         :post="post"
         @select="openPost"
@@ -138,25 +137,24 @@ function openPost(id: number) {
     </section>
 
     <section v-else-if="section === 'posts'" class="profile-panels">
-      <article class="profile-panel">
-        <h2>我的帖子接口待补齐</h2>
-        <p>当前后端文档缺少 `GET /users/me/posts`，暂以全站帖子列表代替结构预览。</p>
-      </article>
-      <PostCard v-for="post in postStore.postList" :key="post.id" :post="post" @select="openPost" />
+      <el-empty v-if="userStore.myPosts.length === 0" description="当前用户还没有发布帖子" />
+      <PostCard
+        v-for="post in userStore.myPosts"
+        v-else
+        :key="post.id"
+        :post="post"
+        @select="openPost"
+      />
     </section>
 
     <section v-else-if="section === 'comments'" class="profile-panels">
-      <article class="profile-panel">
-        <h2>我的评论接口待补齐</h2>
-        <p>当前后端文档缺少 `GET /users/me/comments`，暂展示帖子 1 的评论列表作为结构占位。</p>
-      </article>
-      <CommentList :comments="commentStore.getComments(1)" title="评论结构预览" />
+      <CommentList :comments="userStore.myComments" title="我的评论" />
     </section>
 
     <section v-else class="profile-settings">
       <article class="profile-panel">
         <h2>账号设置</h2>
-        <p>后续接入修改密码、清理缓存、退出登录等真实功能。</p>
+        <p>设置页结构保留不变，等待后续接入修改密码、清理缓存等真实接口。</p>
       </article>
       <div class="profile-settings__grid">
         <article class="profile-setting-card">

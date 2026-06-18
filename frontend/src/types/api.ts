@@ -76,3 +76,17 @@ export interface UnlikePostDto {
   deleted: boolean
   post_id: number
 }
+
+export interface UserPostListDto {
+  items: PostDto[]
+}
+
+export interface UserCommentListDto {
+  items: CommentDto[]
+}
+
+export interface UserStatsDto {
+  post_count: number
+  comment_count: number
+  like_count: number
+}

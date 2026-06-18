@@ -4,9 +4,22 @@ from fastapi.responses import JSONResponse
 from app.api.deps import CurrentUserDep, SessionDep
 from app.core.response import error, success
 from app.core.security import create_access_token, verify_password
-from app.schemas.user import UserCreate, UserLogin, UserLoginRead, UserRead
+from app.schemas.comment import CommentRead
+from app.schemas.post import PostRead
+from app.schemas.user import (
+    UserCommentListRead,
+    UserCreate,
+    UserLogin,
+    UserLoginRead,
+    UserPostListRead,
+    UserRead,
+    UserStatsRead,
+)
 from app.services.user_service import (
     create_user,
+    get_comments_by_user_id,
+    get_posts_by_user_id,
+    get_user_stats,
     get_user_by_account,
     get_user_by_email,
     get_user_by_username,
@@ -54,3 +67,28 @@ def login_user(user_login: UserLogin, session: SessionDep):
 @router.get("/me")
 def read_current_user(current_user: CurrentUserDep):
     return success(UserRead.model_validate(current_user).model_dump(mode="json"))
+
+
+@router.get("/me/posts")
+def read_my_posts(session: SessionDep, current_user: CurrentUserDep):
+    posts = get_posts_by_user_id(session, current_user.id)
+    payload = UserPostListRead(
+        items=[PostRead.model_validate(post) for post in posts]
+    )
+    return success(payload.model_dump(mode="json"))
+
+
+@router.get("/me/comments")
+def read_my_comments(session: SessionDep, current_user: CurrentUserDep):
+    comments = get_comments_by_user_id(session, current_user.id)
+    payload = UserCommentListRead(
+        items=[CommentRead.model_validate(comment) for comment in comments]
+    )
+    return success(payload.model_dump(mode="json"))
+
+
+@router.get("/me/stats")
+def read_my_stats(session: SessionDep, current_user: CurrentUserDep):
+    stats = get_user_stats(session, current_user.id)
+    payload = UserStatsRead(**stats)
+    return success(payload.model_dump(mode="json"))
