@@ -1,38 +1,35 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { User } from '@element-plus/icons-vue'
-import { useRoute } from 'vue-router'
 import AppFooter from './AppFooter.vue'
 import AppHeader from './AppHeader.vue'
 
-const route = useRoute()
-
-const pageName = computed(() => {
-  const placeholder = route.meta.placeholder
-  return typeof placeholder === 'string' ? placeholder : 'Page'
-})
-
-const pageSummary = computed(() => {
-  const summaries: Record<string, string> = {
-    Home: '这里是首页内容区占位，后续接入帖子信息流与推荐内容。',
-    CreatePost: '这里是发布入口占位，后续接入帖子创建表单与发布流程。',
-    Profile: '这里是用户中心占位，后续接入用户信息、我的帖子和我的评论。',
-    MyPosts: '这里将展示当前用户发布的帖子列表。',
-    MyComments: '这里将展示当前用户发表的评论列表。',
-    Settings: '这里将展示账号设置与偏好配置。',
-    PostDetail: '这里将展示帖子详情、互动信息与评论列表。',
-    Error: '这里是系统错误占位页面。',
-    NotFound: '这里是 404 占位页面。',
-  }
-
-  return summaries[pageName.value] || '这里是当前页面的占位内容区域。'
-})
-
-const userCard = {
-  nickname: '匿名同学',
-  userId: '#1024',
-  tagline: '用最轻的负担表达真实想法',
+interface SidebarUserCard {
+  nickname: string
+  userId: string
+  tagline: string
 }
+
+const props = withDefaults(
+  defineProps<{
+    title: string
+    description: string
+    eyebrow?: string
+    showSidebar?: boolean
+    userCard?: SidebarUserCard
+  }>(),
+  {
+    eyebrow: 'CampusTree',
+    showSidebar: true,
+    userCard: () => ({
+      nickname: '匿名同学',
+      userId: '#1024',
+      tagline: '用最轻的负担表达真实想法',
+    }),
+  },
+)
+
+const fallbackUserCard = computed(() => props.userCard)
 </script>
 
 <template>
@@ -40,45 +37,32 @@ const userCard = {
     <AppHeader />
 
     <main class="app-layout__main">
-      <div class="app-layout__shell">
+      <div class="app-layout__shell" :class="{ 'app-layout__shell--single': !showSidebar }">
         <section class="app-layout__content">
           <header class="page-hero">
-            <p class="page-hero__eyebrow">CampusTree</p>
-            <h1 class="page-hero__title">{{ pageName }}</h1>
-            <p class="page-hero__description">{{ pageSummary }}</p>
+            <p class="page-hero__eyebrow">{{ eyebrow }}</p>
+            <h1 class="page-hero__title">{{ title }}</h1>
+            <p class="page-hero__description">{{ description }}</p>
           </header>
 
-          <section class="page-placeholder">
-            <div class="page-placeholder__meta">
-              <span class="page-placeholder__tag">Route</span>
-              <span class="page-placeholder__path">{{ route.fullPath }}</span>
-            </div>
-            <div class="page-placeholder__grid">
-              <article class="page-placeholder__panel">
-                <h2>页面壳层已就绪</h2>
-                <p>
-                  顶部导航、Logo 区域、首页入口、发布入口、用户中心入口和移动端底部导航已经接入。
-                </p>
-              </article>
-              <article class="page-placeholder__panel">
-                <h2>当前阶段说明</h2>
-                <p>本页面仅使用占位数据，不接真实 API，不落具体业务逻辑。</p>
-              </article>
-            </div>
+          <section class="page-content">
+            <slot />
           </section>
         </section>
 
-        <aside class="app-layout__sidebar" aria-label="用户概览">
-          <section class="profile-card">
-            <div class="profile-card__avatar">
-              <el-icon><User /></el-icon>
-            </div>
-            <div class="profile-card__content">
-              <h2>{{ userCard.nickname }}</h2>
-              <p>{{ userCard.userId }}</p>
-              <span>{{ userCard.tagline }}</span>
-            </div>
-          </section>
+        <aside v-if="showSidebar" class="app-layout__sidebar" aria-label="页面辅助信息">
+          <slot name="sidebar">
+            <section class="profile-card">
+              <div class="profile-card__avatar">
+                <el-icon><User /></el-icon>
+              </div>
+              <div class="profile-card__content">
+                <h2>{{ fallbackUserCard.nickname }}</h2>
+                <p>{{ fallbackUserCard.userId }}</p>
+                <span>{{ fallbackUserCard.tagline }}</span>
+              </div>
+            </section>
+          </slot>
         </aside>
       </div>
     </main>
@@ -106,6 +90,10 @@ const userCard = {
   gap: var(--space-24);
   width: min(100%, 1048px);
   margin: 0 auto;
+}
+
+.app-layout__shell--single {
+  grid-template-columns: minmax(0, 820px);
 }
 
 .app-layout__content {
@@ -144,64 +132,9 @@ const userCard = {
   line-height: 1.75;
 }
 
-.page-placeholder {
-  padding: var(--space-24);
-  border: 1px solid rgba(229, 231, 235, 0.72);
-  border-radius: var(--radius-16);
-  background: rgba(255, 255, 255, 0.92);
-  box-shadow: var(--shadow-card);
-}
-
-.page-placeholder__meta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-8);
-  margin-bottom: var(--space-24);
-}
-
-.page-placeholder__tag {
-  display: inline-flex;
-  align-items: center;
-  min-height: 24px;
-  padding: 0 var(--space-8);
-  border-radius: 999px;
-  color: var(--color-primary);
-  font-size: 13px;
-  font-weight: 600;
-  background: rgba(16, 185, 129, 0.1);
-}
-
-.page-placeholder__path {
-  color: var(--color-text-secondary);
-  font-size: 13px;
-}
-
-.page-placeholder__grid {
+.page-content {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-16);
-}
-
-.page-placeholder__panel {
-  padding: var(--space-16);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-12);
-  background: linear-gradient(180deg, #ffffff 0%, #f8fcfa 100%);
-}
-
-.page-placeholder__panel h2 {
-  margin-bottom: var(--space-8);
-  color: var(--color-text-primary);
-  font-size: 18px;
-  font-weight: 600;
-  line-height: 1.5;
-}
-
-.page-placeholder__panel p {
-  color: var(--color-text-secondary);
-  font-size: 16px;
-  line-height: 1.75;
+  gap: var(--space-24);
 }
 
 .app-layout__sidebar {
@@ -251,7 +184,8 @@ const userCard = {
 }
 
 @media (max-width: 1023px) {
-  .app-layout__shell {
+  .app-layout__shell,
+  .app-layout__shell--single {
     grid-template-columns: minmax(0, 1fr);
   }
 
@@ -265,17 +199,12 @@ const userCard = {
     padding: var(--space-16) var(--space-16) calc(104px + env(safe-area-inset-bottom));
   }
 
-  .page-hero,
-  .page-placeholder {
+  .page-hero {
     padding: var(--space-16);
   }
 
   .page-hero__title {
     font-size: 24px;
-  }
-
-  .page-placeholder__grid {
-    grid-template-columns: minmax(0, 1fr);
   }
 }
 </style>
