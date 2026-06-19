@@ -1,0 +1,527 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="CampusTree 是一个面向校园场景的匿名树洞交流平台，支持发帖、评论、点赞和个人中心等 MVP 功能。"
+    />
+    <title>CampusTree | 校园树洞项目展示</title>
+    <style>
+      :root {
+        --bg: #f6f7f2;
+        --panel: #ffffff;
+        --ink: #1f2933;
+        --muted: #68737d;
+        --line: #dfe5dc;
+        --green: #2f7d5b;
+        --green-dark: #1f5f43;
+        --leaf: #d9ead7;
+        --gold: #d7a84f;
+        --blue: #3b6f8f;
+        --shadow: 0 24px 70px rgba(31, 41, 51, 0.12);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family:
+          Inter, "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", Arial,
+          sans-serif;
+        color: var(--ink);
+        background:
+          linear-gradient(180deg, rgba(246, 247, 242, 0.96), rgba(239, 244, 235, 0.96)),
+          var(--bg);
+      }
+
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      .page {
+        min-height: 100vh;
+      }
+
+      .nav {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: min(1120px, calc(100% - 40px));
+        margin: 0 auto;
+        padding: 24px 0;
+      }
+
+      .brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        font-weight: 800;
+        letter-spacing: 0;
+      }
+
+      .brand-mark {
+        display: grid;
+        width: 40px;
+        height: 40px;
+        place-items: center;
+        color: #ffffff;
+        background: var(--green);
+        border-radius: 8px;
+        box-shadow: 0 10px 24px rgba(47, 125, 91, 0.24);
+      }
+
+      .nav-link {
+        color: var(--green-dark);
+        font-size: 14px;
+        font-weight: 700;
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: minmax(0, 1.04fr) minmax(360px, 0.96fr);
+        gap: 52px;
+        align-items: center;
+        width: min(1120px, calc(100% - 40px));
+        min-height: calc(100vh - 88px);
+        margin: 0 auto;
+        padding: 36px 0 72px;
+      }
+
+      h1 {
+        max-width: 680px;
+        margin: 0;
+        font-size: clamp(42px, 7vw, 86px);
+        line-height: 0.95;
+        letter-spacing: 0;
+      }
+
+      .lead {
+        max-width: 620px;
+        margin: 24px 0 0;
+        color: var(--muted);
+        font-size: 18px;
+        line-height: 1.8;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 14px;
+        margin-top: 34px;
+      }
+
+      .button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 48px;
+        padding: 0 20px;
+        border: 1px solid transparent;
+        border-radius: 8px;
+        font-size: 15px;
+        font-weight: 800;
+        transition:
+          transform 180ms ease,
+          box-shadow 180ms ease,
+          border-color 180ms ease;
+      }
+
+      .button:hover {
+        transform: translateY(-2px);
+      }
+
+      .button-primary {
+        color: #ffffff;
+        background: var(--green);
+        box-shadow: 0 16px 36px rgba(47, 125, 91, 0.24);
+      }
+
+      .button-primary:hover {
+        background: var(--green-dark);
+      }
+
+      .button-secondary {
+        color: var(--green-dark);
+        background: rgba(255, 255, 255, 0.66);
+        border-color: var(--line);
+      }
+
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+        margin-top: 44px;
+        max-width: 600px;
+      }
+
+      .stat {
+        padding: 18px;
+        background: rgba(255, 255, 255, 0.7);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+      }
+
+      .stat strong {
+        display: block;
+        font-size: 24px;
+        line-height: 1.1;
+      }
+
+      .stat span {
+        display: block;
+        margin-top: 8px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .showcase {
+        position: relative;
+        min-height: 560px;
+      }
+
+      .browser {
+        position: relative;
+        overflow: hidden;
+        background: var(--panel);
+        border: 1px solid rgba(223, 229, 220, 0.9);
+        border-radius: 8px;
+        box-shadow: var(--shadow);
+      }
+
+      .browser-bar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        height: 42px;
+        padding: 0 14px;
+        border-bottom: 1px solid var(--line);
+        background: #fbfcf9;
+      }
+
+      .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+      }
+
+      .dot:nth-child(1) {
+        background: #e56d5f;
+      }
+
+      .dot:nth-child(2) {
+        background: #e6b84f;
+      }
+
+      .dot:nth-child(3) {
+        background: #58ad72;
+      }
+
+      .screen {
+        padding: 26px;
+      }
+
+      .screen-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 22px;
+      }
+
+      .screen-title {
+        font-size: 20px;
+        font-weight: 900;
+      }
+
+      .tag {
+        padding: 7px 10px;
+        color: var(--green-dark);
+        background: var(--leaf);
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 800;
+      }
+
+      .post-list {
+        display: grid;
+        gap: 14px;
+      }
+
+      .post {
+        padding: 18px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #ffffff;
+      }
+
+      .post h2 {
+        margin: 0 0 8px;
+        font-size: 17px;
+        line-height: 1.35;
+      }
+
+      .post p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.7;
+      }
+
+      .post-meta {
+        display: flex;
+        gap: 12px;
+        margin-top: 14px;
+        color: var(--blue);
+        font-size: 13px;
+        font-weight: 800;
+      }
+
+      .side-card {
+        position: absolute;
+        right: -18px;
+        bottom: 34px;
+        width: min(280px, 72%);
+        padding: 20px;
+        background: #26342f;
+        color: #ffffff;
+        border-radius: 8px;
+        box-shadow: 0 20px 50px rgba(31, 41, 51, 0.22);
+      }
+
+      .side-card strong {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 16px;
+      }
+
+      .side-card span {
+        color: rgba(255, 255, 255, 0.76);
+        font-size: 13px;
+        line-height: 1.6;
+      }
+
+      .feature-band {
+        background: #ffffff;
+        border-top: 1px solid var(--line);
+      }
+
+      .features {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 18px;
+        width: min(1120px, calc(100% - 40px));
+        margin: 0 auto;
+        padding: 44px 0;
+      }
+
+      .feature {
+        padding: 20px 0;
+        border-top: 3px solid var(--green);
+      }
+
+      .feature h3 {
+        margin: 0 0 8px;
+        font-size: 17px;
+      }
+
+      .feature p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.7;
+      }
+
+      .footer {
+        width: min(1120px, calc(100% - 40px));
+        margin: 0 auto;
+        padding: 28px 0;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      @media (max-width: 900px) {
+        .hero {
+          grid-template-columns: 1fr;
+          gap: 36px;
+          min-height: auto;
+          padding-top: 24px;
+        }
+
+        .showcase {
+          min-height: auto;
+        }
+
+        .side-card {
+          position: relative;
+          right: auto;
+          bottom: auto;
+          width: 100%;
+          margin-top: 16px;
+        }
+
+        .features {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 560px) {
+        .nav {
+          width: min(100% - 28px, 1120px);
+          padding: 18px 0;
+        }
+
+        .hero,
+        .features,
+        .footer {
+          width: min(100% - 28px, 1120px);
+        }
+
+        .hero {
+          padding-bottom: 46px;
+        }
+
+        h1 {
+          font-size: 44px;
+        }
+
+        .lead {
+          font-size: 16px;
+        }
+
+        .actions {
+          display: grid;
+        }
+
+        .stats {
+          grid-template-columns: 1fr;
+          margin-top: 30px;
+        }
+
+        .screen {
+          padding: 18px;
+        }
+
+        .features {
+          grid-template-columns: 1fr;
+          padding: 32px 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <nav class="nav" aria-label="主导航">
+        <a class="brand" href="https://campustree.ivano.bond" aria-label="打开 CampusTree">
+          <span class="brand-mark">CT</span>
+          <span>CampusTree</span>
+        </a>
+        <a class="nav-link" href="https://campustree.ivano.bond">进入项目</a>
+      </nav>
+
+      <section class="hero">
+        <div>
+          <h1>校园树洞匿名交流平台</h1>
+          <p class="lead">
+            CampusTree 面向校园场景，提供匿名发帖、评论互动、点赞反馈和个人中心等核心能力。
+            当前版本已完成前后端联调，适合本地演示、答辩说明和项目展示。
+          </p>
+          <div class="actions">
+            <a class="button button-primary" href="https://campustree.ivano.bond">
+              打开 CampusTree
+            </a>
+          </div>
+          <div class="stats" aria-label="项目状态">
+            <div class="stat">
+              <strong>MVP</strong>
+              <span>核心功能已完成</span>
+            </div>
+            <div class="stat">
+              <strong>Vue 3</strong>
+              <span>前端页面与状态管理</span>
+            </div>
+            <div class="stat">
+              <strong>FastAPI</strong>
+              <span>后端接口与 JWT 认证</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="showcase" aria-label="CampusTree 功能预览">
+          <div class="browser">
+            <div class="browser-bar" aria-hidden="true">
+              <span class="dot"></span>
+              <span class="dot"></span>
+              <span class="dot"></span>
+            </div>
+            <div class="screen">
+              <div class="screen-head">
+                <div class="screen-title">树洞广场</div>
+                <div class="tag">匿名交流</div>
+              </div>
+              <div class="post-list">
+                <article class="post">
+                  <h2>今天的课程设计终于跑通了</h2>
+                  <p>从数据库迁移到前端页面联调，完整流程已经可以演示。</p>
+                  <div class="post-meta">
+                    <span>12 评论</span>
+                    <span>36 点赞</span>
+                  </div>
+                </article>
+                <article class="post">
+                  <h2>期末周互助帖</h2>
+                  <p>分享复习资料、学习节奏和校园生活里的小问题。</p>
+                  <div class="post-meta">
+                    <span>8 评论</span>
+                    <span>21 点赞</span>
+                  </div>
+                </article>
+                <article class="post">
+                  <h2>匿名表达，也要保持友善</h2>
+                  <p>树洞是情绪出口，也是互相理解的公共空间。</p>
+                  <div class="post-meta">
+                    <span>5 评论</span>
+                    <span>18 点赞</span>
+                  </div>
+                </article>
+              </div>
+            </div>
+          </div>
+          <div class="side-card">
+            <strong>完整演示路径</strong>
+            <span>注册登录、发布帖子、评论点赞、进入个人中心查看自己的内容。</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="feature-band" aria-label="功能介绍">
+        <div class="features">
+          <article class="feature">
+            <h3>用户系统</h3>
+            <p>支持注册、登录、JWT 认证、当前用户信息和密码修改。</p>
+          </article>
+          <article class="feature">
+            <h3>帖子系统</h3>
+            <p>支持发布、浏览、详情查看，以及删除自己的帖子。</p>
+          </article>
+          <article class="feature">
+            <h3>评论互动</h3>
+            <p>支持帖子评论、评论列表展示和个人评论管理。</p>
+          </article>
+          <article class="feature">
+            <h3>点赞反馈</h3>
+            <p>支持点赞、取消点赞，为树洞内容提供轻量互动。</p>
+          </article>
+        </div>
+      </section>
+
+      <footer class="footer">
+        CampusTree 项目展示页 · 访问真实项目：
+        <a href="https://campustree.ivano.bond">campustree.ivano.bond</a>
+      </footer>
+    </main>
+  </body>
+</html>
