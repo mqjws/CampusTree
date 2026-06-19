@@ -480,42 +480,6 @@ AI 功能开发流程：
 
 ---
 
-## 当前优先级
-
-Priority 1：
-
-用户注册、登录、JWT 认证。
-
-Priority 2：
-
-帖子模块。
-
-Priority 3：
-
-评论模块。
-
-Priority 4：
-
-点赞模块。
-
-Priority 5：
-
-AI 模块。
-
----
-
-## 下一阶段开发计划
-
-1. 设计 PostgreSQL 数据表
-2. 搭建 FastAPI 后端基础结构
-3. 配置 SQLModel 数据库连接
-4. 配置 Alembic 数据库迁移
-5. 实现用户注册、登录和 JWT 认证
-6. 搭建 Vue3 + Vite + TypeScript 前端基础结构
-7. 联调用户模块
-
----
-
 ## 项目最终目标
 
 完成一套：

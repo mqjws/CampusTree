@@ -1,6 +1,6 @@
 # PROMPTS.md
 
-本文件用于指导后续通过 AI 分阶段开发 CampusTree 项目。
+本文件用于指导 AI 分阶段开发 CampusTree 项目。
 
 当前技术栈：
 
