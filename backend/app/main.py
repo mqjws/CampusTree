@@ -14,6 +14,8 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:5173",
         "http://127.0.0.1:5173",
+        "https://campustree.ivano.bond",     # ← 新增
+        "https://ivano.bond",                 # ← 新增
     ],
     allow_credentials=True,
     allow_methods=["*"],
