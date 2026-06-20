@@ -2,7 +2,7 @@ from fastapi.testclient import TestClient
 from sqlmodel import Session, select
 
 from app.core.security import create_access_token
-from app.models import Post, User
+from app.models import Comment, Post, User
 
 
 def auth_headers(user: User) -> dict[str, str]:
@@ -34,6 +34,14 @@ def create_post(
     return post
 
 
+def create_comment(session: Session, author: User, post: Post, content: str) -> Comment:
+    comment = Comment(content=content, author_id=author.id, post_id=post.id)
+    session.add(comment)
+    session.commit()
+    session.refresh(comment)
+    return comment
+
+
 def test_create_post_success(client: TestClient, session: Session):
     user = create_user(session, "createpost")
 
@@ -49,6 +57,7 @@ def test_create_post_success(client: TestClient, session: Session):
     assert body["data"]["title"] == "New Post"
     assert body["data"]["content"] == "New post content"
     assert body["data"]["author_id"] == user.id
+    assert body["data"]["comment_count"] == 0
 
     post = session.exec(select(Post).where(Post.title == "New Post")).first()
     assert post is not None
@@ -58,6 +67,8 @@ def test_list_posts_success(client: TestClient, session: Session):
     user = create_user(session, "listposts")
     post_one = create_post(session, user, title="First Post")
     post_two = create_post(session, user, title="Second Post")
+    create_comment(session, user, post_one, "First comment")
+    create_comment(session, user, post_one, "Second comment")
 
     response = client.get("/api/v1/posts?page=1&size=10")
 
@@ -68,11 +79,16 @@ def test_list_posts_success(client: TestClient, session: Session):
     assert body["data"]["page"] == 1
     assert body["data"]["size"] == 10
     assert {item["id"] for item in body["data"]["items"]} == {post_one.id, post_two.id}
+    counts_by_post_id = {
+        item["id"]: item["comment_count"] for item in body["data"]["items"]
+    }
+    assert counts_by_post_id == {post_one.id: 2, post_two.id: 0}
 
 
 def test_read_post_success(client: TestClient, session: Session):
     user = create_user(session, "readpost")
     post = create_post(session, user, title="Readable Post")
+    create_comment(session, user, post, "Detail comment")
 
     response = client.get(f"/api/v1/posts/{post.id}")
 
@@ -81,6 +97,7 @@ def test_read_post_success(client: TestClient, session: Session):
     assert body["code"] == 200
     assert body["data"]["id"] == post.id
     assert body["data"]["title"] == "Readable Post"
+    assert body["data"]["comment_count"] == 1
 
 
 def test_update_post_success(client: TestClient, session: Session):

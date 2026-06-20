@@ -8,6 +8,11 @@ from app.models.user import User
 from app.schemas.user import UserCreate
 
 
+def _post_with_comment_count(post: Post, comment_count: int) -> Post:
+    object.__setattr__(post, "comment_count", int(comment_count))
+    return post
+
+
 def get_user_by_username(session: Session, username: str) -> User | None:
     statement = select(User).where(User.username == username)
     return session.exec(statement).first()
@@ -41,9 +46,16 @@ def create_user(session: Session, user_create: UserCreate) -> User:
 
 def get_posts_by_user_id(session: Session, user_id: int) -> list[Post]:
     statement = (
-        select(Post).where(Post.author_id == user_id).order_by(Post.created_at.desc())
+        select(Post, func.count(Comment.id))
+        .outerjoin(Comment, Comment.post_id == Post.id)
+        .where(Post.author_id == user_id)
+        .group_by(Post.id)
+        .order_by(Post.created_at.desc())
     )
-    return list(session.exec(statement).all())
+    return [
+        _post_with_comment_count(post, comment_count)
+        for post, comment_count in session.exec(statement).all()
+    ]
 
 
 def get_comments_by_user_id(session: Session, user_id: int) -> list[Comment]:

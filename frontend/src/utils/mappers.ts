@@ -46,7 +46,7 @@ export function mapPostDtoToRecord(post: PostDto): PostRecord {
     relativeTime: formatRelativeTime(post.created_at),
     fullTime: formatFullTime(post.created_at),
     likeCount: 0,
-    commentCount: 0,
+    commentCount: post.comment_count,
     author: {
       id: post.author_id,
       alias: `用户 #${post.author_id}`,

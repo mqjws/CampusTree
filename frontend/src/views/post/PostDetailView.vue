@@ -5,12 +5,14 @@ import { ElMessage } from 'element-plus'
 import { useRoute, useRouter } from 'vue-router'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import CommentList from '@/components/comment/CommentList.vue'
+import { useAuthStore } from '@/stores/modules/auth'
 import { useCommentStore } from '@/stores/modules/comment'
 import { usePostStore } from '@/stores/modules/post'
 import { useUserStore } from '@/stores/modules/user'
 
 const route = useRoute()
 const router = useRouter()
+const authStore = useAuthStore()
 const postStore = usePostStore()
 const commentStore = useCommentStore()
 const userStore = useUserStore()
@@ -21,12 +23,22 @@ const post = computed(() => postStore.currentPost)
 const comments = computed(() => commentStore.getComments(postId.value))
 
 async function handleCreateComment() {
+  if (!authStore.isAuthenticated) {
+    ElMessage.warning('请先登录后再评论')
+    await router.push({
+      path: '/login',
+      query: { redirect: route.fullPath },
+    })
+    return
+  }
+
   if (!commentDraft.value.trim()) {
     return
   }
 
   try {
     await commentStore.createComment(postId.value, commentDraft.value.trim())
+    postStore.incrementCommentCount(postId.value)
     ElMessage.success('评论已提交')
     commentDraft.value = ''
   } catch {
@@ -84,7 +96,7 @@ onMounted(() => {
           </span>
           <span>
             <el-icon><ChatDotRound /></el-icon>
-            {{ comments.length }} 评论
+            {{ post.commentCount }} 评论
           </span>
         </div>
       </template>
@@ -100,7 +112,7 @@ onMounted(() => {
         v-model="commentDraft"
         type="textarea"
         :rows="4"
-        placeholder="说点什么……"
+        placeholder="说点什么..."
         resize="none"
       />
       <div class="detail-comment-box__footer">

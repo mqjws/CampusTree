@@ -1,8 +1,14 @@
 from sqlmodel import Session, func, select
 
+from app.models.comment import Comment
 from app.models.post import Post
 from app.models.post import utc_now
 from app.schemas.post import PostCreate, PostUpdate
+
+
+def _post_with_comment_count(post: Post, comment_count: int) -> Post:
+    object.__setattr__(post, "comment_count", int(comment_count))
+    return post
 
 
 def create_post(session: Session, post_create: PostCreate, author_id: int) -> Post:
@@ -14,7 +20,7 @@ def create_post(session: Session, post_create: PostCreate, author_id: int) -> Po
     session.add(post)
     session.commit()
     session.refresh(post)
-    return post
+    return _post_with_comment_count(post, 0)
 
 
 def get_posts_paginated(
@@ -27,17 +33,33 @@ def get_posts_paginated(
 
     offset = (page - 1) * size
     statement = (
-        select(Post)
+        select(Post, func.count(Comment.id))
+        .outerjoin(Comment, Comment.post_id == Post.id)
+        .group_by(Post.id)
         .order_by(Post.created_at.desc())
         .offset(offset)
         .limit(size)
     )
-    items = list(session.exec(statement).all())
+    items = [
+        _post_with_comment_count(post, comment_count)
+        for post, comment_count in session.exec(statement).all()
+    ]
     return items, total
 
 
 def get_post_by_id(session: Session, post_id: int) -> Post | None:
-    return session.get(Post, post_id)
+    statement = (
+        select(Post, func.count(Comment.id))
+        .outerjoin(Comment, Comment.post_id == Post.id)
+        .where(Post.id == post_id)
+        .group_by(Post.id)
+    )
+    result = session.exec(statement).first()
+    if result is None:
+        return None
+
+    post, comment_count = result
+    return _post_with_comment_count(post, comment_count)
 
 
 def delete_post(session: Session, post: Post) -> None:
@@ -54,4 +76,4 @@ def update_post(session: Session, post: Post, post_update: PostUpdate) -> Post:
     session.add(post)
     session.commit()
     session.refresh(post)
-    return post
+    return get_post_by_id(session, post.id) or post
