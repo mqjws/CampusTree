@@ -199,6 +199,14 @@ npm run build
 
 
 
+
+
+## 懒得部署,在线访问->
+
+https://campustreex.com
+
+![](E:\CampusTree\frontend\public\show.png)
+
 ## 演示流程
 
 推荐按以下流程演示：

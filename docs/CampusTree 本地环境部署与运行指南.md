@@ -9,17 +9,15 @@
 当前推荐分支：
 
 ```text
-frontend-dev
+main
 ```
-
-如果项目已经把前端分支合并到了 `main`，则可以直接使用 `main`。
 
 克隆并切换分支：
 
 ```powershell
 git clone <你的 GitHub 仓库地址>
 cd CampusTree
-git checkout frontend-dev
+git checkout main
 ```
 
 ## 2. 需要提前安装的软件

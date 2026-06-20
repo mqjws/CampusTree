@@ -25,15 +25,9 @@ origin/frontend-dev
 
 当前情况：
 
-- `main` 分支目前主要是完整后端实现。
-- `frontend-dev` 分支包含当前完整 MVP 版本，包括前端页面和前后端联调。
-- 如果需要在本地运行完整项目，目前应该使用 `frontend-dev` 分支。
-
-建议的最终仓库结构：
-
-- 在最终提交或分享前，将 `frontend-dev` 合并到 `main`。
-- 让 `main` 成为唯一的稳定可运行分支。
-- 如果暂时不合并，需要切换到 `frontend-dev` 分支。
+- `main` 分支包含当前完整 MVP 版本，包括前端页面和前后端联调。
+- `frontend-dev` 分支为正在开发未来的版本。
+- 如果需要在本地运行完整项目，目前应该使用 `main` 分支。
 
 ## 已完成的 MVP 功能
 
@@ -151,20 +145,17 @@ README 和规划文档中提到过：
 
 ### 生产部署
 
-项目目前还没有最终生产部署文件，例如：
+本项目已经部署公网服务器,可直接发访问
 
-- Nginx 站点配置。
-- Systemd 后端服务配置。
-- 自动化部署脚本。
-- 已验证可访问的公网域名部署。
+https://campustreex.com
 
 当前前端生产环境变量中有：
 
 ```text
-https://api.campustree.com/api/v1
+https://api.campustreex.com/api/v1
 ```
 
-如果后续真正部署，而这个域名不可用，需要修改为实际后端 API 地址。
+如果后续真正部署，这个域名暂时有一年期限，为实际后端 API 地址。
 
 ## 当前 Git 工作区状态
 
@@ -186,16 +177,4 @@ https://api.campustree.com/api/v1
 
 ```text
 当前项目已经达到本地 MVP 演示标准。
-```
-
-如果用于 GitHub 最终交付：
-
-```text
-建议将 frontend-dev 合并到 main，然后直接克隆 main 分支。
-```
-
-如果暂时不合并：
-
-```text
-需要 checkout frontend-dev，因为 main 目前只有后端。
 ```
