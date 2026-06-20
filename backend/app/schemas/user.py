@@ -13,17 +13,26 @@ class UserCreate(BaseModel):
         max_length=255,
         pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$",
     )
-    password: str = Field(min_length=6, max_length=72)
+    password: str = Field(min_length=5, max_length=72)
+    email_code: str = Field(min_length=6, max_length=6, pattern=r"^\d{6}$")
+
+
+class EmailCodeCreate(BaseModel):
+    email: str = Field(
+        min_length=5,
+        max_length=255,
+        pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$",
+    )
 
 
 class UserLogin(BaseModel):
     account: str = Field(min_length=3, max_length=255)
-    password: str = Field(min_length=6, max_length=72)
+    password: str = Field(min_length=5, max_length=72)
 
 
 class UserPasswordUpdate(BaseModel):
-    old_password: str = Field(min_length=6, max_length=72)
-    new_password: str = Field(min_length=6, max_length=72)
+    old_password: str = Field(min_length=5, max_length=72)
+    new_password: str = Field(min_length=5, max_length=72)
 
 
 class UserRead(BaseModel):

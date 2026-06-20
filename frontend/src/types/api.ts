@@ -30,6 +30,15 @@ export interface RegisterPayload {
   username: string
   email: string
   password: string
+  email_code: string
+}
+
+export interface EmailCodePayload {
+  email: string
+}
+
+export interface EmailCodeDto {
+  sent: boolean
 }
 
 export interface UpdatePasswordPayload {

@@ -30,7 +30,7 @@ const rules: FormRules<LoginForm> = {
   ],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 8, message: '密码至少 8 位', trigger: 'blur' },
+    { min: 5, message: '密码至少 5 位', trigger: 'blur' },
   ],
 }
 
@@ -86,14 +86,21 @@ async function handleSubmit() {
 
       <el-form ref="formRef" :model="form" :rules="rules" label-position="top" @submit.prevent>
         <el-form-item label="用户名或邮箱" prop="account">
-          <el-input v-model="form.account" placeholder="请输入用户名或邮箱" size="large" />
+          <el-input
+            v-model="form.account"
+            autocomplete="username"
+            placeholder="请输入用户名或邮箱"
+            size="large"
+          />
         </el-form-item>
 
         <el-form-item label="密码" prop="password">
           <el-input
             v-model="form.password"
+            autocomplete="current-password"
             type="password"
             show-password
+            name="campustree_login_password"
             placeholder="请输入密码"
             size="large"
           />

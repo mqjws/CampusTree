@@ -16,6 +16,14 @@ class Settings(BaseSettings):
     deepseek_base_url: str = "https://api.deepseek.com"
     deepseek_model: str = "deepseek-chat"
 
+    smtp_host: str = ""
+    smtp_port: int = 465
+    smtp_username: str = ""
+    smtp_password: str = ""
+    smtp_from_name: str = "CampusTree"
+    email_code_expire_minutes: int = 10
+    email_code_resend_seconds: int = 60
+
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
 

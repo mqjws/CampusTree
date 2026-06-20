@@ -14,6 +14,15 @@ defineProps<{
 
 <template>
   <div class="auth-layout">
+    <a
+      class="auth-layout__intro-link"
+      href="https://info.campustreex.com"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      项目介绍
+    </a>
+
     <section class="auth-layout__aside">
       <RouterLink class="auth-layout__brand" to="/" aria-label="CampusTree 首页">
         <span class="auth-layout__brand-mark">CT</span>
@@ -47,6 +56,7 @@ defineProps<{
 
 <style scoped>
 .auth-layout {
+  position: relative;
   min-height: 100vh;
   display: grid;
   grid-template-columns: minmax(320px, 520px) minmax(0, 1fr);
@@ -54,6 +64,41 @@ defineProps<{
     radial-gradient(circle at top left, rgba(16, 185, 129, 0.18), transparent 30%),
     radial-gradient(circle at bottom right, rgba(59, 130, 246, 0.12), transparent 28%),
     linear-gradient(180deg, #f5fbf8 0%, #f9fafb 100%);
+}
+
+.auth-layout__intro-link {
+  position: absolute;
+  top: var(--space-24);
+  right: var(--space-24);
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0 var(--space-16);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: var(--radius-8);
+  color: var(--color-primary);
+  font-size: 14px;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: var(--shadow-card);
+  backdrop-filter: blur(14px);
+  transition:
+    color 200ms ease,
+    border-color 200ms ease,
+    background-color 200ms ease,
+    transform 120ms ease,
+    box-shadow 200ms ease;
+}
+
+.auth-layout__intro-link:hover,
+.auth-layout__intro-link:focus-visible {
+  color: #059669;
+  border-color: rgba(5, 150, 105, 0.48);
+  background: #ffffff;
+  box-shadow: var(--shadow-hover);
+  transform: translateY(-1px);
 }
 
 .auth-layout__aside {
@@ -185,6 +230,14 @@ defineProps<{
 }
 
 @media (max-width: 767px) {
+  .auth-layout__intro-link {
+    top: var(--space-16);
+    right: var(--space-16);
+    min-height: 36px;
+    padding: 0 var(--space-12);
+    font-size: 13px;
+  }
+
   .auth-layout__aside,
   .auth-layout__main {
     padding: var(--space-16);

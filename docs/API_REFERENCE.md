@@ -50,6 +50,44 @@ Authorization: Bearer <access_token>
 
 ## User APIs
 
+### Send Register Email Code
+
+```http
+POST /api/v1/users/email-code
+```
+
+JWT: No
+
+Request body:
+
+```json
+{
+  "email": "alice@example.com"
+}
+```
+
+Response body:
+
+```json
+{
+  "code": 200,
+  "message": "email code sent",
+  "data": {
+    "sent": true
+  }
+}
+```
+
+Errors:
+
+| Status | Message |
+|---:|---|
+| 400 | `email already exists` |
+| 429 | `email code sent too frequently` |
+| 500 | `email service is not configured` |
+| 500 | `email code send failed` |
+| 422 | Validation error |
+
 ### Register
 
 ```http
@@ -64,7 +102,8 @@ Request body:
 {
   "username": "alice",
   "email": "alice@example.com",
-  "password": "password123"
+  "password": "password123",
+  "email_code": "123456"
 }
 ```
 
@@ -92,6 +131,7 @@ Errors:
 |---:|---|
 | 400 | `username already exists` |
 | 400 | `email already exists` |
+| 400 | `invalid email verification code` |
 | 422 | Validation error |
 
 ### Login

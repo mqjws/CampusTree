@@ -61,6 +61,14 @@ const activePath = computed(() => route.path)
           <el-icon class="app-header__link-icon"><component :is="item.icon" /></el-icon>
           <span>{{ item.label }}</span>
         </RouterLink>
+        <a
+          class="app-header__intro-link"
+          href="https://info.campustreex.com"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          项目介绍
+        </a>
       </nav>
     </div>
   </header>
@@ -182,6 +190,35 @@ const activePath = computed(() => route.path)
   background: #059669;
 }
 
+.app-header__intro-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0 var(--space-16);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: var(--radius-8);
+  color: var(--color-primary);
+  font-size: 14px;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.72);
+  transition:
+    color 200ms ease,
+    border-color 200ms ease,
+    background-color 200ms ease,
+    transform 120ms ease,
+    box-shadow 200ms ease;
+}
+
+.app-header__intro-link:hover,
+.app-header__intro-link:focus-visible {
+  color: #059669;
+  border-color: rgba(5, 150, 105, 0.48);
+  background: #ffffff;
+  box-shadow: 0 8px 20px rgba(16, 185, 129, 0.14);
+  transform: translateY(-1px);
+}
+
 @media (max-width: 767px) {
   .app-header__inner {
     min-height: 56px;
@@ -206,6 +243,26 @@ const activePath = computed(() => route.path)
 
   .app-header__link--primary span {
     display: none;
+  }
+
+  .app-header__intro-link {
+    min-height: 36px;
+    padding: 0 var(--space-12);
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 359px) {
+  .app-header__brand {
+    gap: var(--space-8);
+  }
+
+  .app-header__brand-text strong {
+    font-size: 16px;
+  }
+
+  .app-header__intro-link {
+    padding: 0 var(--space-8);
   }
 }
 </style>

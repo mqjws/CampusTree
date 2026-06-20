@@ -7,6 +7,7 @@ from app.core.security import create_access_token, verify_password
 from app.schemas.comment import CommentRead
 from app.schemas.post import PostRead
 from app.schemas.user import (
+    EmailCodeCreate,
     UserCommentListRead,
     UserCreate,
     UserLogin,
@@ -25,6 +26,14 @@ from app.services.user_service import (
     get_user_by_username,
     get_user_stats,
     update_user_password,
+)
+from app.services.email_service import EmailConfigError, send_register_code_email
+from app.services.email_verification_service import (
+    EmailCodeCooldownError,
+    EmailCodeInvalidError,
+    create_email_verification_code,
+    delete_latest_unused_email_code,
+    verify_email_code,
 )
 
 
@@ -45,8 +54,50 @@ def register_user(user_create: UserCreate, session: SessionDep):
             content=error(message="email already exists", code=400),
         )
 
+    try:
+        verify_email_code(session, str(user_create.email), user_create.email_code)
+    except EmailCodeInvalidError:
+        return JSONResponse(
+            status_code=400,
+            content=error(message="invalid email verification code", code=400),
+        )
+
     user = create_user(session, user_create)
     return success(UserRead.model_validate(user).model_dump(mode="json"))
+
+
+@router.post("/email-code")
+def send_email_code(payload: EmailCodeCreate, session: SessionDep):
+    if get_user_by_email(session, str(payload.email)):
+        return JSONResponse(
+            status_code=400,
+            content=error(message="email already exists", code=400),
+        )
+
+    try:
+        code = create_email_verification_code(session, str(payload.email))
+    except EmailCodeCooldownError:
+        return JSONResponse(
+            status_code=429,
+            content=error(message="email code sent too frequently", code=429),
+        )
+
+    try:
+        send_register_code_email(str(payload.email), code)
+    except EmailConfigError:
+        delete_latest_unused_email_code(session, str(payload.email))
+        return JSONResponse(
+            status_code=500,
+            content=error(message="email service is not configured", code=500),
+        )
+    except Exception:
+        delete_latest_unused_email_code(session, str(payload.email))
+        return JSONResponse(
+            status_code=500,
+            content=error(message="email code send failed", code=500),
+        )
+
+    return success({"sent": True}, message="email code sent")
 
 
 @router.post("/login")

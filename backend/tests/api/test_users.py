@@ -2,6 +2,10 @@ from fastapi.testclient import TestClient
 from sqlmodel import Session, select
 
 from app.models import Comment, Like, Post, User
+from app.services.email_verification_service import create_email_verification_code
+
+
+TEST_EMAIL_CODE = "123456"
 
 
 def register_payload(
@@ -13,10 +17,17 @@ def register_payload(
         "username": username,
         "email": email,
         "password": password,
+        "email_code": TEST_EMAIL_CODE,
     }
 
 
+def create_test_email_code(session: Session, email: str) -> None:
+    create_email_verification_code(session, email, TEST_EMAIL_CODE)
+
+
 def test_register_user_success(client: TestClient, session: Session):
+    create_test_email_code(session, "testuser@example.com")
+
     response = client.post("/api/v1/users/register", json=register_payload())
 
     assert response.status_code == 200
@@ -30,11 +41,13 @@ def test_register_user_success(client: TestClient, session: Session):
     assert user is not None
 
 
-def test_register_user_duplicate_username(client: TestClient):
+def test_register_user_duplicate_username(client: TestClient, session: Session):
+    create_test_email_code(session, "first@example.com")
     first_response = client.post(
         "/api/v1/users/register",
         json=register_payload(username="duplicate", email="first@example.com"),
     )
+    create_test_email_code(session, "second@example.com")
     second_response = client.post(
         "/api/v1/users/register",
         json=register_payload(username="duplicate", email="second@example.com"),
@@ -45,7 +58,18 @@ def test_register_user_duplicate_username(client: TestClient):
     assert second_response.json()["message"] == "username already exists"
 
 
-def test_login_user_success(client: TestClient):
+def test_register_user_invalid_email_code(client: TestClient):
+    payload = register_payload(email="invalid-code@example.com")
+    payload["email_code"] = "000000"
+
+    response = client.post("/api/v1/users/register", json=payload)
+
+    assert response.status_code == 400
+    assert response.json()["message"] == "invalid email verification code"
+
+
+def test_login_user_success(client: TestClient, session: Session):
+    create_test_email_code(session, "login@example.com")
     register_response = client.post(
         "/api/v1/users/register",
         json=register_payload(username="loginuser", email="login@example.com"),
@@ -64,7 +88,8 @@ def test_login_user_success(client: TestClient):
     assert body["data"]["user"]["username"] == "loginuser"
 
 
-def test_login_user_failure(client: TestClient):
+def test_login_user_failure(client: TestClient, session: Session):
+    create_test_email_code(session, "failed@example.com")
     register_response = client.post(
         "/api/v1/users/register",
         json=register_payload(username="failedlogin", email="failed@example.com"),
@@ -79,7 +104,8 @@ def test_login_user_failure(client: TestClient):
     assert login_response.json()["message"] == "invalid account or password"
 
 
-def test_read_current_user_success(client: TestClient):
+def test_read_current_user_success(client: TestClient, session: Session):
+    create_test_email_code(session, "me@example.com")
     client.post(
         "/api/v1/users/register",
         json=register_payload(username="meuser", email="me@example.com"),
@@ -102,7 +128,8 @@ def test_read_current_user_success(client: TestClient):
     assert body["data"]["email"] == "me@example.com"
 
 
-def authenticate_user(client: TestClient, username: str, email: str) -> str:
+def authenticate_user(client: TestClient, session: Session, username: str, email: str) -> str:
+    create_test_email_code(session, email)
     client.post(
         "/api/v1/users/register",
         json=register_payload(username=username, email=email),
@@ -115,7 +142,7 @@ def authenticate_user(client: TestClient, username: str, email: str) -> str:
 
 
 def test_read_my_posts_success(client: TestClient, session: Session):
-    token = authenticate_user(client, "postowner", "postowner@example.com")
+    token = authenticate_user(client, session, "postowner", "postowner@example.com")
     user = session.exec(select(User).where(User.username == "postowner")).first()
     assert user is not None
 
@@ -136,7 +163,7 @@ def test_read_my_posts_success(client: TestClient, session: Session):
 
 
 def test_read_my_comments_success(client: TestClient, session: Session):
-    token = authenticate_user(client, "commentowner", "commentowner@example.com")
+    token = authenticate_user(client, session, "commentowner", "commentowner@example.com")
     user = session.exec(select(User).where(User.username == "commentowner")).first()
     assert user is not None
 
@@ -162,7 +189,7 @@ def test_read_my_comments_success(client: TestClient, session: Session):
 
 
 def test_read_my_stats_success(client: TestClient, session: Session):
-    token = authenticate_user(client, "statsuser", "statsuser@example.com")
+    token = authenticate_user(client, session, "statsuser", "statsuser@example.com")
     user = session.exec(select(User).where(User.username == "statsuser")).first()
     assert user is not None
 
@@ -201,8 +228,8 @@ def test_read_my_stats_success(client: TestClient, session: Session):
     assert body["data"]["like_count"] == 1
 
 
-def test_update_my_password_success(client: TestClient):
-    token = authenticate_user(client, "passworduser", "passworduser@example.com")
+def test_update_my_password_success(client: TestClient, session: Session):
+    token = authenticate_user(client, session, "passworduser", "passworduser@example.com")
 
     response = client.put(
         "/api/v1/users/me/password",

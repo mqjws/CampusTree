@@ -2,6 +2,7 @@
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage } from 'element-plus'
 import { reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import { createPostCategories } from '@/mock/community'
 import { usePostStore } from '@/stores/modules/post'
@@ -16,6 +17,7 @@ interface CreatePostForm {
 
 const postStore = usePostStore()
 const userStore = useUserStore()
+const router = useRouter()
 const formRef = ref<FormInstance>()
 
 const form = reactive<CreatePostForm>({
@@ -28,12 +30,12 @@ const form = reactive<CreatePostForm>({
 const rules: FormRules<CreatePostForm> = {
   title: [
     { required: true, message: '请输入标题', trigger: 'blur' },
-    { min: 6, max: 60, message: '标题长度为 6 到 60 个字符', trigger: 'blur' },
+    { min: 2, max: 60, message: '标题长度为 2 到 60 个字符', trigger: 'blur' },
   ],
   category: [{ required: true, message: '请选择分类', trigger: 'change' }],
   content: [
     { required: true, message: '请输入正文', trigger: 'blur' },
-    { min: 20, message: '正文至少输入 20 个字符', trigger: 'blur' },
+    { min: 10, message: '正文至少输入 10 个字符', trigger: 'blur' },
   ],
 }
 
@@ -47,8 +49,7 @@ async function handleSubmit() {
   try {
     await postStore.createPost(form.title, form.content)
     ElMessage.success('帖子创建成功')
-    form.title = ''
-    form.content = ''
+    await router.push('/')
   } catch {
     ElMessage.error('帖子创建失败')
   }
