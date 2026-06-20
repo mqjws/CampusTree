@@ -63,24 +63,45 @@ export const usePostStore = defineStore('post', () => {
 
   async function like(postId: number) {
     await postApi.likePost(postId)
+    incrementLikeCount(postId)
   }
 
-  function incrementCommentCount(postId: number) {
-    const update = (post: PostRecord) => {
+  function updatePostCount(
+    postId: number,
+    update: (post: PostRecord) => void,
+  ) {
+    posts.value.forEach((post) => {
       if (post.id === postId) {
-        post.commentCount += 1
+        update(post)
       }
-    }
-
-    posts.value.forEach(update)
+    })
 
     if (currentPost.value?.id === postId) {
       update(currentPost.value)
     }
   }
 
+  function incrementLikeCount(postId: number) {
+    updatePostCount(postId, (post) => {
+      post.likeCount += 1
+    })
+  }
+
+  function decrementLikeCount(postId: number) {
+    updatePostCount(postId, (post) => {
+      post.likeCount = Math.max(0, post.likeCount - 1)
+    })
+  }
+
+  function incrementCommentCount(postId: number) {
+    updatePostCount(postId, (post) => {
+      post.commentCount += 1
+    })
+  }
+
   async function unlike(postId: number) {
     await postApi.unlikePost(postId)
+    decrementLikeCount(postId)
   }
 
   return {

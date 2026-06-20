@@ -58,6 +58,7 @@ export interface PostDto {
   content: string
   author_id: number
   comment_count: number
+  like_count: number
   created_at: string
   updated_at: string
 }

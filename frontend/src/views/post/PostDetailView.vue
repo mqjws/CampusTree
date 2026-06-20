@@ -46,6 +46,15 @@ async function handleCreateComment() {
   }
 }
 
+async function handleLikePost() {
+  try {
+    await postStore.like(postId.value)
+    ElMessage.success('点赞成功')
+  } catch {
+    ElMessage.error('点赞失败或已点赞')
+  }
+}
+
 onMounted(() => {
   postStore.fetchPostDetail(postId.value).catch(() => undefined)
   commentStore.fetchComments(postId.value).catch(() => undefined)
@@ -90,10 +99,10 @@ onMounted(() => {
         </div>
 
         <div class="detail-card__stats">
-          <span>
+          <el-button plain size="small" @click="handleLikePost">
             <el-icon><Pointer /></el-icon>
             {{ post.likeCount }} 点赞
-          </span>
+          </el-button>
           <span>
             <el-icon><ChatDotRound /></el-icon>
             {{ post.commentCount }} 评论

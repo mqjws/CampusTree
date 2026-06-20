@@ -1,13 +1,16 @@
+from sqlalchemy import distinct
 from sqlmodel import Session, func, select
 
 from app.models.comment import Comment
+from app.models.like import Like
 from app.models.post import Post
 from app.models.post import utc_now
 from app.schemas.post import PostCreate, PostUpdate
 
 
-def _post_with_comment_count(post: Post, comment_count: int) -> Post:
+def _post_with_counts(post: Post, comment_count: int, like_count: int) -> Post:
     object.__setattr__(post, "comment_count", int(comment_count))
+    object.__setattr__(post, "like_count", int(like_count))
     return post
 
 
@@ -20,7 +23,7 @@ def create_post(session: Session, post_create: PostCreate, author_id: int) -> Po
     session.add(post)
     session.commit()
     session.refresh(post)
-    return _post_with_comment_count(post, 0)
+    return _post_with_counts(post, 0, 0)
 
 
 def get_posts_paginated(
@@ -33,24 +36,34 @@ def get_posts_paginated(
 
     offset = (page - 1) * size
     statement = (
-        select(Post, func.count(Comment.id))
+        select(
+            Post,
+            func.count(distinct(Comment.id)),
+            func.count(distinct(Like.id)),
+        )
         .outerjoin(Comment, Comment.post_id == Post.id)
+        .outerjoin(Like, Like.post_id == Post.id)
         .group_by(Post.id)
         .order_by(Post.created_at.desc())
         .offset(offset)
         .limit(size)
     )
     items = [
-        _post_with_comment_count(post, comment_count)
-        for post, comment_count in session.exec(statement).all()
+        _post_with_counts(post, comment_count, like_count)
+        for post, comment_count, like_count in session.exec(statement).all()
     ]
     return items, total
 
 
 def get_post_by_id(session: Session, post_id: int) -> Post | None:
     statement = (
-        select(Post, func.count(Comment.id))
+        select(
+            Post,
+            func.count(distinct(Comment.id)),
+            func.count(distinct(Like.id)),
+        )
         .outerjoin(Comment, Comment.post_id == Post.id)
+        .outerjoin(Like, Like.post_id == Post.id)
         .where(Post.id == post_id)
         .group_by(Post.id)
     )
@@ -58,8 +71,8 @@ def get_post_by_id(session: Session, post_id: int) -> Post | None:
     if result is None:
         return None
 
-    post, comment_count = result
-    return _post_with_comment_count(post, comment_count)
+    post, comment_count, like_count = result
+    return _post_with_counts(post, comment_count, like_count)
 
 
 def delete_post(session: Session, post: Post) -> None:

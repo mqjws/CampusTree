@@ -45,7 +45,7 @@ export function mapPostDtoToRecord(post: PostDto): PostRecord {
     category: '未分类',
     relativeTime: formatRelativeTime(post.created_at),
     fullTime: formatFullTime(post.created_at),
-    likeCount: 0,
+    likeCount: post.like_count,
     commentCount: post.comment_count,
     author: {
       id: post.author_id,
