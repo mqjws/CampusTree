@@ -205,7 +205,7 @@ npm run build
 
 https://campustreex.com
 
-![](E:\CampusTree\frontend\public\show.png)
+![CampusTree项目截图](frontend/public/show.png)
 
 ## 演示流程
 
