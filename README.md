@@ -35,13 +35,13 @@ CampusTree 是一个面向大学生的校园树洞匿名交流平台，采用前
 
 当前仓库分支情况：
 
-- `main`：目前主要是完整后端实现
-- `frontend-dev`：当前完整 MVP 版本，包含后端、前端和前后端联调
+- `main`：当前完整 MVP 版本，包含后端、前端和前后端联调
+- `frontend-dev`：当前正在尝试开发的版本
 
 如果需要本地运行完整项目，请优先使用：
 
 ```powershell
-git checkout frontend-dev
+git checkout main
 ```
 
 ## 技术栈
@@ -110,10 +110,8 @@ CampusTree
 ```powershell
 git clone <你的 GitHub 仓库地址>
 cd CampusTree
-git checkout frontend-dev
+git checkout main
 ```
-
-如果已经合并到 `main`，则不需要切换分支。
 
 ### 2. 创建数据库
 
@@ -199,20 +197,7 @@ cd frontend
 npm run build
 ```
 
-前端 lint：
 
-```powershell
-cd frontend
-npm run lint
-```
-
-当前本地验证结果：
-
-```text
-后端测试：35 passed
-前端构建：通过
-前端 lint：通过
-```
 
 ## 演示流程
 
@@ -251,9 +236,3 @@ docs/API_REFERENCE.md
 - 增加 AI 标签和热点总结
 - 增加举报系统
 - 增加管理员后台
-- 增加 Nginx + Systemd 部署配置
-- 部署到公网服务器
-
-## 说明
-
-当前版本适合作为课程设计、本地演示和答辩说明项目。如果需要作为正式上线项目，还需要继续补充 AI 模块、生产部署、安全配置和更多异常场景测试。
