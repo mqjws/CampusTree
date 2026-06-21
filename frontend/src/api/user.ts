@@ -3,6 +3,7 @@ import type {
   ApiResponse,
   UpdatePasswordPayload,
   UpdateProfilePayload,
+  UserActivityListDto,
   UserCommentListDto,
   UserPostListDto,
   UserStatsDto,
@@ -26,6 +27,13 @@ export async function getMyComments(): Promise<UserCommentListDto> {
 
 export async function getMyStats(): Promise<UserStatsDto> {
   const response = await request.get<ApiResponse<UserStatsDto>>('/users/me/stats')
+  return response.data.data
+}
+
+export async function getMyActivity(days = 90): Promise<UserActivityListDto> {
+  const response = await request.get<ApiResponse<UserActivityListDto>>('/users/me/activity', {
+    params: { days },
+  })
   return response.data.data
 }
 

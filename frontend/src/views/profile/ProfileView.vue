@@ -107,9 +107,6 @@ const sectionCopy = computed(() => {
   return map[section.value]
 })
 
-const recentPosts = computed(() => userStore.myPosts.slice(0, 5))
-const recentComments = computed(() => userStore.myComments.slice(0, 3))
-
 const latestActivity = computed(() => {
   const dates = [
     userStore.profile.stats.latestPostAt,
@@ -127,11 +124,20 @@ const latestActivityText = computed(() => {
   return latestActivity.value ? formatRelativeTime(latestActivity.value) : '暂无动态'
 })
 
+const activityTotalScore = computed(() => {
+  return userStore.myActivity.reduce((total, item) => total + item.score, 0)
+})
+
+const activeDays = computed(() => {
+  return userStore.myActivity.filter((item) => item.score > 0).length
+})
+
 onMounted(() => {
   userStore.fetchCurrentUser().then(syncProfileForm).catch(() => undefined)
   userStore.fetchMyPosts().catch(() => undefined)
   userStore.fetchMyComments().catch(() => undefined)
   userStore.fetchMyStats().catch(() => undefined)
+  userStore.fetchMyActivity(90).catch(() => undefined)
 })
 
 function syncProfileForm() {
@@ -140,6 +146,36 @@ function syncProfileForm() {
 
 function openPost(id: number) {
   router.push(`/post/${id}`)
+}
+
+function getActivityLevel(score: number): number {
+  if (score <= 0) {
+    return 0
+  }
+
+  if (score <= 2) {
+    return 1
+  }
+
+  if (score <= 5) {
+    return 2
+  }
+
+  if (score <= 9) {
+    return 3
+  }
+
+  return 4
+}
+
+function formatActivityTitle(item: {
+  date: string
+  postCount: number
+  commentCount: number
+  likeCount: number
+  score: number
+}) {
+  return `${item.date} 活跃度 ${item.score}：发帖 ${item.postCount}，评论 ${item.commentCount}，点赞 ${item.likeCount}`
 }
 
 async function handleUpdateProfile() {
@@ -366,36 +402,36 @@ async function handleLogout() {
 
       <article class="profile-panel">
         <div class="profile-panel__header">
-          <h2>最近发布</h2>
-          <el-button text type="primary" @click="router.push('/profile/posts')">查看全部</el-button>
+          <div>
+            <h2>最近 90 天活跃度</h2>
+            <p>发帖、评论和点赞会计入活跃度。</p>
+          </div>
+          <div class="profile-heatmap__summary">
+            <strong>{{ activeDays }}</strong>
+            <span>活跃天数</span>
+            <strong>{{ activityTotalScore }}</strong>
+            <span>总分</span>
+          </div>
         </div>
-        <el-empty v-if="recentPosts.length === 0" description="当前用户还没有发布帖子" />
-        <PostCard
-          v-for="post in recentPosts"
-          v-else
-          :key="post.id"
-          :post="post"
-          @select="openPost"
-        />
-      </article>
 
-      <article class="profile-panel">
-        <div class="profile-panel__header">
-          <h2>最近评论</h2>
-          <el-button text type="primary" @click="router.push('/profile/comments')">查看全部</el-button>
+        <el-empty v-if="userStore.myActivity.length === 0" description="暂无活跃度数据" />
+        <div v-else class="profile-heatmap">
+          <div
+            v-for="item in userStore.myActivity"
+            :key="item.date"
+            class="profile-heatmap__cell"
+            :class="`profile-heatmap__cell--${getActivityLevel(item.score)}`"
+            :title="formatActivityTitle(item)"
+          />
         </div>
-        <el-empty v-if="recentComments.length === 0" description="当前用户还没有发表过评论" />
-        <div v-else class="profile-comment-preview">
-          <button
-            v-for="comment in recentComments"
-            :key="comment.id"
-            type="button"
-            @click="openPost(comment.postId)"
-          >
-            <span>{{ comment.postTitle }}</span>
-            <p>{{ comment.content }}</p>
-            <small>{{ comment.relativeTime }}</small>
-          </button>
+        <div class="profile-heatmap__legend">
+          <span>少</span>
+          <i class="profile-heatmap__cell profile-heatmap__cell--0" />
+          <i class="profile-heatmap__cell profile-heatmap__cell--1" />
+          <i class="profile-heatmap__cell profile-heatmap__cell--2" />
+          <i class="profile-heatmap__cell profile-heatmap__cell--3" />
+          <i class="profile-heatmap__cell profile-heatmap__cell--4" />
+          <span>多</span>
         </div>
       </article>
 
@@ -702,54 +738,72 @@ async function handleLogout() {
   gap: var(--space-4);
 }
 
-.profile-comment-preview {
+.profile-heatmap {
   display: grid;
-  gap: var(--space-12);
-}
-
-.profile-comment-preview button {
-  display: grid;
-  gap: var(--space-8);
-  width: 100%;
-  padding: var(--space-12);
+  grid-template-columns: repeat(auto-fill, minmax(14px, 1fr));
+  gap: 6px;
+  padding: var(--space-16);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-8);
-  color: inherit;
-  background: var(--color-bg-card);
-  text-align: left;
-  cursor: pointer;
-  transition:
-    border-color 200ms ease,
-    box-shadow 200ms ease;
+  border-radius: var(--radius-12);
+  background: linear-gradient(180deg, #ffffff 0%, #f8fcfa 100%);
 }
 
-.profile-comment-preview button:hover {
-  border-color: rgba(16, 185, 129, 0.22);
-  box-shadow: var(--shadow-hover);
-}
-
-.profile-comment-preview span {
-  overflow: hidden;
-  color: var(--color-text-primary);
-  font-size: 14px;
-  font-weight: 600;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.profile-comment-preview p {
-  display: -webkit-box;
-  overflow: hidden;
-  color: var(--color-text-primary);
-  font-size: 15px;
-  line-height: 1.6;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-}
-
-.profile-comment-preview small {
+.profile-heatmap__summary {
+  display: grid;
+  grid-template-columns: repeat(2, auto);
+  align-items: baseline;
+  gap: var(--space-4) var(--space-8);
   color: var(--color-text-secondary);
   font-size: 13px;
+  text-align: right;
+}
+
+.profile-heatmap__summary strong {
+  color: var(--color-text-primary);
+  font-size: 18px;
+}
+
+.profile-heatmap__cell {
+  display: block;
+  aspect-ratio: 1;
+  min-width: 10px;
+  border: 1px solid rgba(229, 231, 235, 0.8);
+  border-radius: 4px;
+}
+
+.profile-heatmap__cell--0 {
+  background: #eef2f7;
+}
+
+.profile-heatmap__cell--1 {
+  background: #d1fae5;
+}
+
+.profile-heatmap__cell--2 {
+  background: #86efac;
+}
+
+.profile-heatmap__cell--3 {
+  background: #22c55e;
+}
+
+.profile-heatmap__cell--4 {
+  background: #15803d;
+}
+
+.profile-heatmap__legend {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-8);
+  margin-top: var(--space-12);
+  color: var(--color-text-secondary);
+  font-size: 13px;
+}
+
+.profile-heatmap__legend .profile-heatmap__cell {
+  width: 14px;
+  min-width: 14px;
 }
 
 .profile-actions {
@@ -796,6 +850,16 @@ async function handleLogout() {
 
   .profile-nav {
     flex-direction: column;
+  }
+
+  .profile-panel__header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .profile-heatmap__summary {
+    grid-template-columns: repeat(4, auto);
+    text-align: left;
   }
 }
 </style>

@@ -20,12 +20,13 @@ export const usePostStore = defineStore('post', () => {
     sort: PostSort = 'latest',
     category?: string,
     topicId?: number,
+    keyword?: string,
   ) {
     loading.value = true
     error.value = null
 
     try {
-      const data = await postApi.listPosts(page, size, sort, category, topicId)
+      const data = await postApi.listPosts(page, size, sort, category, topicId, keyword)
       posts.value = data.items.map(mapPostDtoToRecord)
     } catch (err) {
       error.value = '获取帖子列表失败'

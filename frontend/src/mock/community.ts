@@ -164,13 +164,18 @@ export const mockTopics: TopicItem[] = [
 export const mockNotices: CampusNotice[] = [
   {
     id: 1,
-    title: '本周产品演示',
-    content: '当前页面全部使用占位数据，结构和交互节奏优先于真实业务接入。',
+    title: '欢迎来到 CampusTree',
+    content: '这里适合分享校园里的学习经验、生活发现和临时想法。发帖时请选择合适分类，也可以添加一个具体话题。',
   },
   {
     id: 2,
-    title: '下一阶段计划',
-    content: '后续将接入帖子列表、帖子详情、评论列表和用户中心相关 API。',
+    title: '话题功能已开放',
+    content: '发布内容时可以选择已有话题，也可以输入新的 #话题。热门话题会根据真实帖子实时更新。',
+  },
+  {
+    id: 3,
+    title: '公告后台计划',
+    content: '当前公告暂由前端固定展示，后续会加入管理员后台，用于实时发布、编辑和下线公告。',
   },
 ]
 

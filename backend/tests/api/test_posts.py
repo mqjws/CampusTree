@@ -145,6 +145,32 @@ def test_list_posts_can_filter_by_category(client: TestClient, session: Session)
     assert body["data"]["items"][0]["category"] == "学习"
 
 
+def test_list_posts_can_search_by_keyword(client: TestClient, session: Session):
+    user = create_user(session, "searchposts")
+    title_match = create_post(session, user, title="考研数学资料")
+    content_match = create_post(
+        session,
+        user,
+        title="晚自习",
+        content="图书馆座位预约经验分享",
+    )
+    create_post(session, user, title="食堂测评", content="今天二楼窗口不错")
+
+    response = client.get("/api/v1/posts?page=1&size=10&keyword=图书馆")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["data"]["total"] == 1
+    assert [item["id"] for item in body["data"]["items"]] == [content_match.id]
+
+    response = client.get("/api/v1/posts?page=1&size=10&keyword=数学")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["data"]["total"] == 1
+    assert [item["id"] for item in body["data"]["items"]] == [title_match.id]
+
+
 def test_list_posts_hot_sort_uses_activity_counts(
     client: TestClient, session: Session
 ):

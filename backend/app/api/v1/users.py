@@ -1,4 +1,6 @@
-from fastapi import APIRouter
+from typing import Annotated
+
+from fastapi import APIRouter, Query
 from fastapi.responses import JSONResponse
 
 from app.api.deps import CurrentUserDep, SessionDep
@@ -9,6 +11,8 @@ from app.schemas.post import PostRead
 from app.schemas.user import (
     EmailCodeCreate,
     UserCommentListRead,
+    UserActivityListRead,
+    UserActivityRead,
     UserCreate,
     UserLogin,
     UserLoginRead,
@@ -25,6 +29,7 @@ from app.services.user_service import (
     get_user_by_account,
     get_user_by_email,
     get_user_by_username,
+    get_user_activity,
     get_user_stats,
     update_user_password,
     update_user_profile,
@@ -154,6 +159,19 @@ def read_my_comments(session: SessionDep, current_user: CurrentUserDep):
 def read_my_stats(session: SessionDep, current_user: CurrentUserDep):
     stats = get_user_stats(session, current_user.id)
     payload = UserStatsRead(**stats)
+    return success(payload.model_dump(mode="json"))
+
+
+@router.get("/me/activity")
+def read_my_activity(
+    session: SessionDep,
+    current_user: CurrentUserDep,
+    days: Annotated[int, Query(ge=7, le=180)] = 90,
+):
+    activity = get_user_activity(session, current_user.id, days=days)
+    payload = UserActivityListRead(
+        items=[UserActivityRead(**item) for item in activity]
+    )
     return success(payload.model_dump(mode="json"))
 
 

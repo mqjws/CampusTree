@@ -1,6 +1,6 @@
 from typing import Literal
 
-from sqlalchemy import desc, distinct
+from sqlalchemy import desc, distinct, or_
 from sqlmodel import Session, func, select
 
 from app.models.comment import Comment
@@ -49,6 +49,7 @@ def get_posts_paginated(
     sort: Literal["latest", "hot", "views", "comments", "likes"] = "latest",
     category: str | None = None,
     topic_id: int | None = None,
+    keyword: str | None = None,
     current_user_id: int | None = None,
 ) -> tuple[list[Post], int]:
     filters = []
@@ -56,6 +57,15 @@ def get_posts_paginated(
         filters.append(Post.category == category)
     if topic_id is not None:
         filters.append(Post.topic_id == topic_id)
+    normalized_keyword = keyword.strip() if keyword else ""
+    if normalized_keyword:
+        keyword_pattern = f"%{normalized_keyword}%"
+        filters.append(
+            or_(
+                Post.title.ilike(keyword_pattern),
+                Post.content.ilike(keyword_pattern),
+            )
+        )
 
     total_statement = select(func.count()).select_from(Post).where(*filters)
     total = session.exec(total_statement).one()

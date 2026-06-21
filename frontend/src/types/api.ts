@@ -138,3 +138,15 @@ export interface UserStatsDto {
   latest_post_at: string | null
   latest_comment_at: string | null
 }
+
+export interface UserActivityDto {
+  date: string
+  post_count: number
+  comment_count: number
+  like_count: number
+  score: number
+}
+
+export interface UserActivityListDto {
+  items: UserActivityDto[]
+}

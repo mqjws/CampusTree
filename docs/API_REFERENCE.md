@@ -345,7 +345,7 @@ Errors:
 ### List Posts
 
 ```http
-GET /api/v1/posts?page=1&size=10
+GET /api/v1/posts?page=1&size=10&sort=latest&keyword=library
 ```
 
 JWT: No
@@ -356,6 +356,10 @@ Query:
 |---|---|---:|---|
 | `page` | number | 1 | `>= 1` |
 | `size` | number | 10 | `1..100` |
+| `sort` | string | `latest` | `latest`, `hot`, `views`, `comments`, `likes` |
+| `category` | string | - | Filter by post category |
+| `topic_id` | number | - | Filter by topic id |
+| `keyword` | string | - | Search post title and content, max 100 chars |
 
 Response body:
 
@@ -369,7 +373,16 @@ Response body:
         "id": 1,
         "title": "Hello",
         "content": "CampusTree post content",
+        "category": "学习",
         "author_id": 1,
+        "author_nickname": "alice",
+        "topic_id": 1,
+        "topic_name": "图书馆座位",
+        "allow_comments": true,
+        "view_count": 12,
+        "comment_count": 3,
+        "like_count": 5,
+        "liked_by_current_user": false,
         "created_at": "2026-06-17T10:00:00Z",
         "updated_at": "2026-06-17T10:00:00Z"
       }
@@ -728,8 +741,8 @@ export function login(account: string, password: string) {
 ### List Posts
 
 ```ts
-export function listPosts(page = 1, size = 10) {
-  return api.get("/posts", { params: { page, size } });
+export function listPosts(page = 1, size = 10, keyword?: string) {
+  return api.get("/posts", { params: { page, size, keyword } });
 }
 ```
 

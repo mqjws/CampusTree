@@ -54,6 +54,14 @@ export interface ProfileStats {
   latestCommentAt: string | null
 }
 
+export interface ActivityRecord {
+  date: string
+  postCount: number
+  commentCount: number
+  likeCount: number
+  score: number
+}
+
 export interface ProfileRecord {
   userId: string
   nickname: string

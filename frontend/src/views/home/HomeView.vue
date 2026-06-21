@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { Bell, TrendCharts } from '@element-plus/icons-vue'
-import { onMounted, ref, watch } from 'vue'
+import { Bell, Close, Search, TrendCharts } from '@element-plus/icons-vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import PostCard from '@/components/post/PostCard.vue'
@@ -17,8 +17,11 @@ const userStore = useUserStore()
 const sortMode = ref<PostSort>('latest')
 const activeCategory = ref('')
 const activeTopicId = ref<number | null>(null)
+const searchKeyword = ref('')
 const hotTopics = ref<TopicDto[]>([])
+const searchHistory = ref<string[]>([])
 const loadingTopics = ref(false)
+const searchHistoryKey = 'campus_tree_search_history'
 const sortOptions = [
   { label: '最新', value: 'latest' },
   { label: '热门', value: 'hot' },
@@ -31,11 +34,20 @@ const categoryOptions = [
   })),
 ]
 
+const activeKeyword = computed(() => searchKeyword.value.trim())
+const hasActiveFilters = computed(
+  () =>
+    Boolean(activeKeyword.value) ||
+    Boolean(activeCategory.value) ||
+    activeTopicId.value !== null,
+)
+
 function openPost(id: number) {
   router.push(`/post/${id}`)
 }
 
 onMounted(() => {
+  loadSearchHistory()
   fetchPostList()
   fetchHotTopics()
   userStore.fetchCurrentUser().catch(() => undefined)
@@ -53,6 +65,7 @@ function fetchPostList() {
       sortMode.value,
       activeCategory.value || undefined,
       activeTopicId.value || undefined,
+      activeKeyword.value || undefined,
     )
     .catch(() => undefined)
 }
@@ -72,6 +85,67 @@ async function fetchHotTopics() {
 
 function toggleTopic(topicId: number) {
   activeTopicId.value = activeTopicId.value === topicId ? null : topicId
+}
+
+function querySearchSuggestions(query: string, callback: (items: { value: string }[]) => void) {
+  const normalizedQuery = query.trim().toLowerCase()
+  const historyItems = searchHistory.value
+  const topicItems = hotTopics.value.map((topic) => topic.name)
+  const categoryItems = createPostCategories
+  const suggestions = [...new Set([...historyItems, ...topicItems, ...categoryItems])]
+    .filter((item) => !normalizedQuery || item.toLowerCase().includes(normalizedQuery))
+    .slice(0, 8)
+    .map((value) => ({ value }))
+
+  callback(suggestions)
+}
+
+function handleSearch() {
+  const keyword = activeKeyword.value
+  if (keyword) {
+    saveSearchKeyword(keyword)
+  }
+
+  fetchPostList()
+}
+
+function clearSearch() {
+  searchKeyword.value = ''
+  fetchPostList()
+}
+
+function clearAllFilters() {
+  searchKeyword.value = ''
+  activeCategory.value = ''
+  activeTopicId.value = null
+  fetchPostList()
+}
+
+function loadSearchHistory() {
+  try {
+    const raw = localStorage.getItem(searchHistoryKey)
+    const parsed = raw ? JSON.parse(raw) : []
+    searchHistory.value = Array.isArray(parsed)
+      ? parsed.filter((item): item is string => typeof item === 'string').slice(0, 8)
+      : []
+  } catch {
+    searchHistory.value = []
+  }
+}
+
+function saveSearchKeyword(keyword: string) {
+  searchHistory.value = [keyword, ...searchHistory.value.filter((item) => item !== keyword)].slice(0, 8)
+  localStorage.setItem(searchHistoryKey, JSON.stringify(searchHistory.value))
+}
+
+function clearSearchHistory() {
+  searchHistory.value = []
+  localStorage.removeItem(searchHistoryKey)
+}
+
+function applyHistoryKeyword(keyword: string) {
+  searchKeyword.value = keyword
+  handleSearch()
 }
 </script>
 
@@ -97,15 +171,57 @@ function toggleTopic(topicId: number) {
           />
         </el-select>
       </div>
+      <div class="home-toolbar__search">
+        <el-autocomplete
+          v-model="searchKeyword"
+          class="home-search"
+          size="large"
+          clearable
+          :fetch-suggestions="querySearchSuggestions"
+          placeholder="搜索标题或内容"
+          @select="handleSearch"
+          @keyup.enter="handleSearch"
+          @clear="clearSearch"
+        >
+          <template #prefix>
+            <el-icon><Search /></el-icon>
+          </template>
+        </el-autocomplete>
+        <el-button type="primary" size="large" @click="handleSearch">搜索</el-button>
+      </div>
       <el-button type="primary" size="large" @click="router.push('/create')">
         发布一条新内容
       </el-button>
     </section>
 
+    <section v-if="hasActiveFilters || searchHistory.length > 0" class="home-search-panel">
+      <div v-if="hasActiveFilters" class="home-search-panel__active">
+        <span v-if="activeKeyword">关键词：{{ activeKeyword }}</span>
+        <span v-if="activeCategory">分类：{{ activeCategory }}</span>
+        <span v-if="activeTopicId">
+          话题：{{ hotTopics.find((topic) => topic.id === activeTopicId)?.name || activeTopicId }}
+        </span>
+        <el-button :icon="Close" text @click="clearAllFilters">清空筛选</el-button>
+      </div>
+      <div v-if="searchHistory.length > 0" class="home-search-panel__history">
+        <span>搜索历史</span>
+        <button
+          v-for="keyword in searchHistory"
+          :key="keyword"
+          class="history-chip"
+          type="button"
+          @click="applyHistoryKeyword(keyword)"
+        >
+          {{ keyword }}
+        </button>
+        <el-button text @click="clearSearchHistory">清除</el-button>
+      </div>
+    </section>
+
     <section v-loading="postStore.loading" class="home-list">
       <el-empty
         v-if="!postStore.loading && postStore.postList.length === 0"
-        description="还没有帖子数据"
+        :description="activeKeyword ? '没有找到相关帖子' : '还没有帖子数据'"
       />
       <PostCard
         v-for="post in postStore.postList"
@@ -169,6 +285,61 @@ function toggleTopic(topicId: number) {
   border-radius: var(--radius-12);
   background: rgba(255, 255, 255, 0.92);
   box-shadow: var(--shadow-card);
+}
+
+.home-toolbar__search {
+  display: flex;
+  flex: 1;
+  min-width: 260px;
+  gap: var(--space-8);
+}
+
+.home-search {
+  width: 100%;
+}
+
+.home-search-panel {
+  display: grid;
+  gap: var(--space-12);
+  padding: var(--space-16);
+  border: 1px solid rgba(229, 231, 235, 0.72);
+  border-radius: var(--radius-12);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: var(--shadow-card);
+}
+
+.home-search-panel__active,
+.home-search-panel__history {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-8);
+  color: var(--color-text-secondary);
+  font-size: 14px;
+}
+
+.home-search-panel__active span {
+  padding: 6px var(--space-12);
+  border-radius: var(--radius-8);
+  color: var(--color-primary);
+  background: #ecfdf5;
+}
+
+.history-chip {
+  padding: 6px var(--space-12);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-8);
+  color: var(--color-text-primary);
+  background: #ffffff;
+  cursor: pointer;
+  transition:
+    border-color 200ms ease,
+    color 200ms ease;
+}
+
+.history-chip:hover {
+  border-color: rgba(16, 185, 129, 0.32);
+  color: var(--color-primary);
 }
 
 .home-list,
@@ -265,6 +436,10 @@ function toggleTopic(topicId: number) {
   .home-toolbar {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .home-toolbar__search {
+    min-width: 0;
   }
 
   .home-toolbar__tabs {

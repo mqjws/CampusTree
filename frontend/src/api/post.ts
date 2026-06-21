@@ -16,9 +16,10 @@ export async function listPosts(
   sort: PostSort = 'latest',
   category?: string,
   topicId?: number,
+  keyword?: string,
 ): Promise<PaginatedData<PostDto>> {
   const response = await request.get<ApiResponse<PaginatedData<PostDto>>>('/posts', {
-    params: { page, size, sort, category, topic_id: topicId },
+    params: { page, size, sort, category, topic_id: topicId, keyword },
   })
   return response.data.data
 }

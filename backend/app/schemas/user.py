@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -81,3 +81,15 @@ class UserStatsRead(BaseModel):
     view_count: int
     latest_post_at: datetime | None = None
     latest_comment_at: datetime | None = None
+
+
+class UserActivityRead(BaseModel):
+    date: date
+    post_count: int
+    comment_count: int
+    like_count: int
+    score: int
+
+
+class UserActivityListRead(BaseModel):
+    items: list[UserActivityRead]

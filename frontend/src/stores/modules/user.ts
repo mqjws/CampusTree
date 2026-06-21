@@ -2,13 +2,20 @@ import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import * as userApi from '@/api/user'
 import { mapCommentDtoToRecord, mapPostDtoToRecord, mapUserToProfile } from '@/utils/mappers'
-import type { CommentRecord, PostRecord, ProfileRecord, ProfileStats } from '@/types/content'
+import type {
+  ActivityRecord,
+  CommentRecord,
+  PostRecord,
+  ProfileRecord,
+  ProfileStats,
+} from '@/types/content'
 import type { UserDto } from '@/types/api'
 
 export const useUserStore = defineStore('user', () => {
   const currentUser = ref<UserDto | null>(null)
   const myPosts = ref<PostRecord[]>([])
   const myComments = ref<CommentRecord[]>([])
+  const myActivity = ref<ActivityRecord[]>([])
   const stats = ref<ProfileStats>({
     posts: 0,
     comments: 0,
@@ -88,6 +95,27 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
+  async function fetchMyActivity(days = 90) {
+    loading.value = true
+    error.value = null
+
+    try {
+      const data = await userApi.getMyActivity(days)
+      myActivity.value = data.items.map((item) => ({
+        date: item.date,
+        postCount: item.post_count,
+        commentCount: item.comment_count,
+        likeCount: item.like_count,
+        score: item.score,
+      }))
+    } catch (err) {
+      error.value = '获取活跃度失败'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
   async function updateMyProfile(nickname: string) {
     loading.value = true
     error.value = null
@@ -106,6 +134,7 @@ export const useUserStore = defineStore('user', () => {
     currentUser.value = null
     myPosts.value = []
     myComments.value = []
+    myActivity.value = []
     stats.value = {
       posts: 0,
       comments: 0,
@@ -120,6 +149,7 @@ export const useUserStore = defineStore('user', () => {
     currentUser,
     myPosts,
     myComments,
+    myActivity,
     stats,
     loading,
     error,
@@ -128,6 +158,7 @@ export const useUserStore = defineStore('user', () => {
     fetchMyPosts,
     fetchMyComments,
     fetchMyStats,
+    fetchMyActivity,
     updateMyProfile,
     clearUser,
   }

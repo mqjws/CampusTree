@@ -1,3 +1,5 @@
+from datetime import date, datetime, time, timedelta, timezone
+
 from sqlalchemy import distinct
 from sqlmodel import Session, func, select
 
@@ -125,6 +127,60 @@ def get_user_stats(session: Session, user_id: int) -> dict[str, int]:
         "latest_post_at": latest_post_at,
         "latest_comment_at": latest_comment_at,
     }
+
+
+def _count_by_day(
+    session: Session,
+    model,
+    user_field,
+    user_id: int,
+    start_at: datetime,
+) -> dict[date, int]:
+    day = func.date(model.created_at)
+    statement = (
+        select(day, func.count())
+        .select_from(model)
+        .where(user_field == user_id, model.created_at >= start_at)
+        .group_by(day)
+    )
+
+    counts: dict[date, int] = {}
+    for raw_day, count in session.exec(statement).all():
+        if isinstance(raw_day, date):
+            parsed_day = raw_day
+        else:
+            parsed_day = date.fromisoformat(str(raw_day))
+        counts[parsed_day] = int(count)
+    return counts
+
+
+def get_user_activity(session: Session, user_id: int, days: int = 90) -> list[dict[str, int | date]]:
+    today = datetime.now(timezone.utc).date()
+    start_day = today - timedelta(days=days - 1)
+    start_at = datetime.combine(start_day, time.min, tzinfo=timezone.utc)
+
+    post_counts = _count_by_day(session, Post, Post.author_id, user_id, start_at)
+    comment_counts = _count_by_day(session, Comment, Comment.author_id, user_id, start_at)
+    like_counts = _count_by_day(session, Like, Like.user_id, user_id, start_at)
+
+    items = []
+    for offset in range(days):
+        current_day = start_day + timedelta(days=offset)
+        post_count = post_counts.get(current_day, 0)
+        comment_count = comment_counts.get(current_day, 0)
+        like_count = like_counts.get(current_day, 0)
+        score = post_count * 3 + comment_count * 2 + like_count
+        items.append(
+            {
+                "date": current_day,
+                "post_count": post_count,
+                "comment_count": comment_count,
+                "like_count": like_count,
+                "score": score,
+            }
+        )
+
+    return items
 
 
 def update_user_password(
