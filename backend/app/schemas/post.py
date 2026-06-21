@@ -6,12 +6,14 @@ from pydantic import BaseModel, ConfigDict, Field
 class PostCreate(BaseModel):
     title: str = Field(min_length=1, max_length=100)
     content: str = Field(min_length=1)
+    category: str = Field(default="未分类", min_length=1, max_length=32)
     allow_comments: bool = True
 
 
 class PostUpdate(BaseModel):
     title: str | None = Field(default=None, min_length=1, max_length=100)
     content: str | None = Field(default=None, min_length=1)
+    category: str | None = Field(default=None, min_length=1, max_length=32)
     allow_comments: bool | None = None
 
 
@@ -19,6 +21,7 @@ class PostRead(BaseModel):
     id: int
     title: str
     content: str
+    category: str = "未分类"
     author_id: int
     allow_comments: bool = True
     view_count: int = 0

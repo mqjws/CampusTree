@@ -26,12 +26,14 @@ def list_posts(
     page: Annotated[int, Query(ge=1)] = 1,
     size: Annotated[int, Query(ge=1, le=100)] = 10,
     sort: Literal["latest", "hot", "views", "comments", "likes"] = "latest",
+    category: str | None = None,
 ):
     items, total = get_posts_paginated(
         session,
         page=page,
         size=size,
         sort=sort,
+        category=category,
         current_user_id=current_user.id if current_user else None,
     )
     result = PostListRead(

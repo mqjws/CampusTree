@@ -20,6 +20,7 @@ class Post(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     title: str = Field(max_length=100, nullable=False)
     content: str = Field(nullable=False)
+    category: str = Field(default="未分类", max_length=32, nullable=False)
     allow_comments: bool = Field(
         default=True,
         sa_column=Column(Boolean, nullable=False, server_default="true"),

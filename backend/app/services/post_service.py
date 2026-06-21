@@ -26,6 +26,7 @@ def create_post(session: Session, post_create: PostCreate, author_id: int) -> Po
     post = Post(
         title=post_create.title,
         content=post_create.content,
+        category=post_create.category,
         allow_comments=post_create.allow_comments,
         author_id=author_id,
     )
@@ -40,9 +41,14 @@ def get_posts_paginated(
     page: int,
     size: int,
     sort: Literal["latest", "hot", "views", "comments", "likes"] = "latest",
+    category: str | None = None,
     current_user_id: int | None = None,
 ) -> tuple[list[Post], int]:
-    total_statement = select(func.count()).select_from(Post)
+    filters = []
+    if category:
+        filters.append(Post.category == category)
+
+    total_statement = select(func.count()).select_from(Post).where(*filters)
     total = session.exec(total_statement).one()
 
     offset = (page - 1) * size
@@ -65,6 +71,7 @@ def get_posts_paginated(
         )
         .outerjoin(Comment, Comment.post_id == Post.id)
         .outerjoin(Like, Like.post_id == Post.id)
+        .where(*filters)
         .group_by(Post.id)
         .order_by(*order_by)
         .offset(offset)

@@ -14,12 +14,17 @@ export const usePostStore = defineStore('post', () => {
 
   const postList = computed(() => posts.value)
 
-  async function fetchPosts(page = 1, size = 10, sort: PostSort = 'latest') {
+  async function fetchPosts(
+    page = 1,
+    size = 10,
+    sort: PostSort = 'latest',
+    category?: string,
+  ) {
     loading.value = true
     error.value = null
 
     try {
-      const data = await postApi.listPosts(page, size, sort)
+      const data = await postApi.listPosts(page, size, sort, category)
       posts.value = data.items.map(mapPostDtoToRecord)
     } catch (err) {
       error.value = '获取帖子列表失败'
@@ -44,7 +49,12 @@ export const usePostStore = defineStore('post', () => {
     }
   }
 
-  async function createPost(title: string, content: string, allowComments = true) {
+  async function createPost(
+    title: string,
+    content: string,
+    category: string,
+    allowComments = true,
+  ) {
     creating.value = true
     error.value = null
 
@@ -52,6 +62,7 @@ export const usePostStore = defineStore('post', () => {
       const post = await postApi.createPost({
         title,
         content,
+        category,
         allow_comments: allowComments,
       })
       const mapped = mapPostDtoToRecord(post)

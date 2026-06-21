@@ -4,7 +4,7 @@ import { onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import PostCard from '@/components/post/PostCard.vue'
-import { mockNotices, mockTopics } from '@/mock/community'
+import { createPostCategories, mockNotices, mockTopics } from '@/mock/community'
 import { usePostStore } from '@/stores/modules/post'
 import { useUserStore } from '@/stores/modules/user'
 import type { PostSort } from '@/api/post'
@@ -13,9 +13,17 @@ const router = useRouter()
 const postStore = usePostStore()
 const userStore = useUserStore()
 const sortMode = ref<PostSort>('latest')
+const activeCategory = ref('')
 const sortOptions = [
   { label: '最新', value: 'latest' },
   { label: '热门', value: 'hot' },
+]
+const categoryOptions = [
+  { label: '全部分类', value: '' },
+  ...createPostCategories.map((category) => ({
+    label: category,
+    value: category,
+  })),
 ]
 
 function openPost(id: number) {
@@ -23,13 +31,17 @@ function openPost(id: number) {
 }
 
 onMounted(() => {
-  postStore.fetchPosts(1, 10, sortMode.value).catch(() => undefined)
+  fetchPostList()
   userStore.fetchCurrentUser().catch(() => undefined)
 })
 
-watch(sortMode, (sort) => {
-  postStore.fetchPosts(1, 10, sort).catch(() => undefined)
+watch([sortMode, activeCategory], () => {
+  fetchPostList()
 })
+
+function fetchPostList() {
+  postStore.fetchPosts(1, 10, sortMode.value, activeCategory.value || undefined).catch(() => undefined)
+}
 </script>
 
 <template>
@@ -45,6 +57,14 @@ watch(sortMode, (sort) => {
     <section class="home-toolbar">
       <div class="home-toolbar__tabs">
         <el-segmented v-model="sortMode" :options="sortOptions" />
+        <el-select v-model="activeCategory" class="home-toolbar__category" size="large">
+          <el-option
+            v-for="category in categoryOptions"
+            :key="category.value"
+            :label="category.label"
+            :value="category.value"
+          />
+        </el-select>
       </div>
       <el-button type="primary" size="large" @click="router.push('/create')">
         发布一条新内容
@@ -119,6 +139,16 @@ watch(sortMode, (sort) => {
   gap: var(--space-16);
 }
 
+.home-toolbar__tabs {
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+}
+
+.home-toolbar__category {
+  width: 148px;
+}
+
 .sidebar-card {
   padding: var(--space-16);
   border: 1px solid rgba(229, 231, 235, 0.72);
@@ -185,6 +215,15 @@ watch(sortMode, (sort) => {
   .home-toolbar {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .home-toolbar__tabs {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .home-toolbar__category {
+    width: 100%;
   }
 }
 </style>

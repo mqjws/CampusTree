@@ -42,7 +42,7 @@ export function mapPostDtoToRecord(post: PostDto): PostRecord {
     title: post.title,
     summary: post.content.length > 120 ? `${post.content.slice(0, 120)}...` : post.content,
     content: post.content,
-    category: '未分类',
+    category: post.category,
     relativeTime: formatRelativeTime(post.created_at),
     fullTime: formatFullTime(post.created_at),
     viewCount: post.view_count,

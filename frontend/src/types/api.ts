@@ -56,6 +56,7 @@ export interface PostDto {
   id: number
   title: string
   content: string
+  category: string
   author_id: number
   allow_comments: boolean
   view_count: number
@@ -69,6 +70,7 @@ export interface PostDto {
 export interface CreatePostPayload {
   title: string
   content: string
+  category: string
   allow_comments: boolean
 }
 

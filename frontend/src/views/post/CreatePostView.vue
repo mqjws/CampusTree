@@ -47,7 +47,7 @@ async function handleSubmit() {
   }
 
   try {
-    await postStore.createPost(form.title, form.content, form.allowComments)
+    await postStore.createPost(form.title, form.content, form.category, form.allowComments)
     ElMessage.success('帖子创建成功')
     await router.push('/')
   } catch {

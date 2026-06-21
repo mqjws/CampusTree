@@ -27,10 +27,12 @@ def create_post(
     title: str = "Test Post",
     content: str = "This is a test post",
     view_count: int = 0,
+    category: str = "未分类",
 ) -> Post:
     post = Post(
         title=title,
         content=content,
+        category=category,
         author_id=author.id,
         view_count=view_count,
     )
@@ -61,7 +63,7 @@ def test_create_post_success(client: TestClient, session: Session):
 
     response = client.post(
         "/api/v1/posts",
-        json={"title": "New Post", "content": "New post content"},
+        json={"title": "New Post", "content": "New post content", "category": "学习"},
         headers=auth_headers(user),
     )
 
@@ -70,6 +72,7 @@ def test_create_post_success(client: TestClient, session: Session):
     assert body["code"] == 200
     assert body["data"]["title"] == "New Post"
     assert body["data"]["content"] == "New post content"
+    assert body["data"]["category"] == "学习"
     assert body["data"]["author_id"] == user.id
     assert body["data"]["allow_comments"] is True
     assert body["data"]["view_count"] == 0
@@ -78,6 +81,7 @@ def test_create_post_success(client: TestClient, session: Session):
 
     post = session.exec(select(Post).where(Post.title == "New Post")).first()
     assert post is not None
+    assert post.category == "学习"
 
 
 def test_create_post_can_disable_comments(client: TestClient, session: Session):
@@ -125,6 +129,20 @@ def test_list_posts_success(client: TestClient, session: Session):
         for item in body["data"]["items"]
     }
     assert counts_by_post_id == {post_one.id: (2, 1), post_two.id: (0, 1)}
+
+
+def test_list_posts_can_filter_by_category(client: TestClient, session: Session):
+    user = create_user(session, "categoryposts")
+    study_post = create_post(session, user, title="Study Post", category="学习")
+    create_post(session, user, title="Food Post", category="美食")
+
+    response = client.get("/api/v1/posts?page=1&size=10&category=学习")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["data"]["total"] == 1
+    assert [item["id"] for item in body["data"]["items"]] == [study_post.id]
+    assert body["data"]["items"][0]["category"] == "学习"
 
 
 def test_list_posts_hot_sort_uses_activity_counts(
