@@ -19,12 +19,13 @@ export const usePostStore = defineStore('post', () => {
     size = 10,
     sort: PostSort = 'latest',
     category?: string,
+    topicId?: number,
   ) {
     loading.value = true
     error.value = null
 
     try {
-      const data = await postApi.listPosts(page, size, sort, category)
+      const data = await postApi.listPosts(page, size, sort, category, topicId)
       posts.value = data.items.map(mapPostDtoToRecord)
     } catch (err) {
       error.value = '获取帖子列表失败'
@@ -54,6 +55,7 @@ export const usePostStore = defineStore('post', () => {
     content: string,
     category: string,
     allowComments = true,
+    topicName = '',
   ) {
     creating.value = true
     error.value = null
@@ -63,6 +65,7 @@ export const usePostStore = defineStore('post', () => {
         title,
         content,
         category,
+        topic_name: topicName.trim() || null,
         allow_comments: allowComments,
       })
       const mapped = mapPostDtoToRecord(post)

@@ -4,16 +4,21 @@ import { onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import PostCard from '@/components/post/PostCard.vue'
-import { createPostCategories, mockNotices, mockTopics } from '@/mock/community'
+import * as topicApi from '@/api/topic'
+import { createPostCategories, mockNotices } from '@/mock/community'
 import { usePostStore } from '@/stores/modules/post'
 import { useUserStore } from '@/stores/modules/user'
 import type { PostSort } from '@/api/post'
+import type { TopicDto } from '@/types/api'
 
 const router = useRouter()
 const postStore = usePostStore()
 const userStore = useUserStore()
 const sortMode = ref<PostSort>('latest')
 const activeCategory = ref('')
+const activeTopicId = ref<number | null>(null)
+const hotTopics = ref<TopicDto[]>([])
+const loadingTopics = ref(false)
 const sortOptions = [
   { label: '最新', value: 'latest' },
   { label: '热门', value: 'hot' },
@@ -32,22 +37,48 @@ function openPost(id: number) {
 
 onMounted(() => {
   fetchPostList()
+  fetchHotTopics()
   userStore.fetchCurrentUser().catch(() => undefined)
 })
 
-watch([sortMode, activeCategory], () => {
+watch([sortMode, activeCategory, activeTopicId], () => {
   fetchPostList()
 })
 
 function fetchPostList() {
-  postStore.fetchPosts(1, 10, sortMode.value, activeCategory.value || undefined).catch(() => undefined)
+  postStore
+    .fetchPosts(
+      1,
+      10,
+      sortMode.value,
+      activeCategory.value || undefined,
+      activeTopicId.value || undefined,
+    )
+    .catch(() => undefined)
+}
+
+async function fetchHotTopics() {
+  loadingTopics.value = true
+
+  try {
+    const data = await topicApi.listHotTopics(8)
+    hotTopics.value = data.items
+  } catch {
+    hotTopics.value = []
+  } finally {
+    loadingTopics.value = false
+  }
+}
+
+function toggleTopic(topicId: number) {
+  activeTopicId.value = activeTopicId.value === topicId ? null : topicId
 }
 </script>
 
 <template>
   <AppLayout
     title="校园匿名流"
-    description="基于 V1 信息流结构，当前首页已接入真实帖子列表接口；右侧话题和公告仍保留为本地占位数据。"
+    description="按分类和话题浏览校园内容，热门话题会根据真实帖子实时更新。"
     :user-card="{
       nickname: userStore.profile.nickname,
       userId: userStore.profile.userId,
@@ -93,14 +124,21 @@ function fetchPostList() {
             <el-icon><TrendCharts /></el-icon>
           </div>
           <div class="topic-list">
+            <el-empty
+              v-if="!loadingTopics && hotTopics.length === 0"
+              description="暂无热门话题"
+            />
             <button
-              v-for="topic in mockTopics"
+              v-for="topic in hotTopics"
+              v-else
               :key="topic.id"
               class="topic-list__item"
+              :class="{ 'topic-list__item--active': activeTopicId === topic.id }"
               type="button"
+              @click="toggleTopic(topic.id)"
             >
-              <span># {{ topic.label }}</span>
-              <small>{{ topic.postCount }} 条</small>
+              <span># {{ topic.name }}</span>
+              <small>{{ topic.post_count }} 条</small>
             </button>
           </div>
         </section>
@@ -186,6 +224,18 @@ function fetchPostList() {
   border-radius: var(--radius-8);
   color: var(--color-text-primary);
   background: linear-gradient(180deg, #ffffff 0%, #f8fcfa 100%);
+  cursor: pointer;
+  transition:
+    border-color 200ms ease,
+    color 200ms ease,
+    background 200ms ease;
+}
+
+.topic-list__item:hover,
+.topic-list__item--active {
+  border-color: rgba(16, 185, 129, 0.32);
+  color: var(--color-primary);
+  background: linear-gradient(180deg, #f0fdf4 0%, #ffffff 100%);
 }
 
 .topic-list__item small {

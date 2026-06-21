@@ -56,6 +56,8 @@ export function mapPostDtoToRecord(post: PostDto): PostRecord {
     commentCount: post.comment_count,
     likedByCurrentUser: post.liked_by_current_user,
     allowComments: post.allow_comments,
+    topicId: post.topic_id,
+    topicName: post.topic_name,
     author: {
       id: post.author_id,
       alias: post.author_nickname,

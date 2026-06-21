@@ -7,6 +7,7 @@ class PostCreate(BaseModel):
     title: str = Field(min_length=1, max_length=100)
     content: str = Field(min_length=1)
     category: str = Field(default="未分类", min_length=1, max_length=32)
+    topic_name: str | None = Field(default=None, max_length=50)
     allow_comments: bool = True
 
 
@@ -24,6 +25,8 @@ class PostRead(BaseModel):
     category: str = "未分类"
     author_id: int
     author_nickname: str
+    topic_id: int | None = None
+    topic_name: str | None = None
     allow_comments: bool = True
     view_count: int = 0
     comment_count: int = 0

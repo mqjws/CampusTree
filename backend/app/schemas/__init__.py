@@ -6,6 +6,7 @@ from app.schemas.comment import (
 )
 from app.schemas.like import LikeCreate, LikeListRead, LikeRead
 from app.schemas.post import PostCreate, PostListRead, PostRead, PostUpdate
+from app.schemas.topic import TopicListRead, TopicRead
 from app.schemas.user import (
     UserCreate,
     UserLogin,
@@ -27,6 +28,8 @@ __all__ = [
     "PostListRead",
     "PostRead",
     "PostUpdate",
+    "TopicListRead",
+    "TopicRead",
     "UserCreate",
     "UserLogin",
     "UserLoginRead",

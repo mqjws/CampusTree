@@ -29,7 +29,10 @@ function handleSelect(id: number) {
         </div>
       </div>
 
-      <el-tag effect="plain" round>{{ post.category }}</el-tag>
+      <div class="post-card__tags">
+        <el-tag v-if="post.topicName" effect="plain" round># {{ post.topicName }}</el-tag>
+        <el-tag effect="plain" round>{{ post.category }}</el-tag>
+      </div>
     </header>
 
     <div class="post-card__body">
@@ -95,6 +98,13 @@ function handleSelect(id: number) {
   display: flex;
   align-items: center;
   gap: var(--space-12);
+}
+
+.post-card__tags {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-8);
 }
 
 .post-card__avatar {

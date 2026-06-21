@@ -9,6 +9,7 @@ from app.models.post import Post
 from app.models.post import utc_now
 from app.models.user import User
 from app.schemas.post import PostCreate, PostUpdate
+from app.services.topic_service import get_or_create_topic
 
 
 def _post_with_counts(
@@ -21,16 +22,19 @@ def _post_with_counts(
     object.__setattr__(post, "like_count", int(like_count))
     object.__setattr__(post, "liked_by_current_user", liked_by_current_user)
     object.__setattr__(post, "author_nickname", post.author.nickname or post.author.username)
+    object.__setattr__(post, "topic_name", post.topic.name if post.topic else None)
     return post
 
 
 def create_post(session: Session, post_create: PostCreate, author_id: int) -> Post:
+    topic = get_or_create_topic(session, post_create.topic_name)
     post = Post(
         title=post_create.title,
         content=post_create.content,
         category=post_create.category,
         allow_comments=post_create.allow_comments,
         author_id=author_id,
+        topic_id=topic.id if topic else None,
     )
     session.add(post)
     session.commit()
@@ -44,11 +48,14 @@ def get_posts_paginated(
     size: int,
     sort: Literal["latest", "hot", "views", "comments", "likes"] = "latest",
     category: str | None = None,
+    topic_id: int | None = None,
     current_user_id: int | None = None,
 ) -> tuple[list[Post], int]:
     filters = []
     if category:
         filters.append(Post.category == category)
+    if topic_id is not None:
+        filters.append(Post.topic_id == topic_id)
 
     total_statement = select(func.count()).select_from(Post).where(*filters)
     total = session.exec(total_statement).one()

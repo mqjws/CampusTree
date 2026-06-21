@@ -27,6 +27,7 @@ def list_posts(
     size: Annotated[int, Query(ge=1, le=100)] = 10,
     sort: Literal["latest", "hot", "views", "comments", "likes"] = "latest",
     category: str | None = None,
+    topic_id: int | None = None,
 ):
     items, total = get_posts_paginated(
         session,
@@ -34,6 +35,7 @@ def list_posts(
         size=size,
         sort=sort,
         category=category,
+        topic_id=topic_id,
         current_user_id=current_user.id if current_user else None,
     )
     result = PostListRead(

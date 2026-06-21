@@ -21,6 +21,8 @@ export const mockPosts: PostRecord[] = [
     commentCount: 18,
     likedByCurrentUser: false,
     allowComments: true,
+    topicId: 1,
+    topicName: '图书馆座位',
     author: {
       id: 101,
       alias: '匿名同学 A',
@@ -41,6 +43,8 @@ export const mockPosts: PostRecord[] = [
     commentCount: 11,
     likedByCurrentUser: false,
     allowComments: true,
+    topicId: 2,
+    topicName: '食堂测评',
     author: {
       id: 102,
       alias: '匿名同学 B',
@@ -61,6 +65,8 @@ export const mockPosts: PostRecord[] = [
     commentCount: 9,
     likedByCurrentUser: false,
     allowComments: true,
+    topicId: 3,
+    topicName: '社团招新',
     author: {
       id: 103,
       alias: '匿名同学 C',

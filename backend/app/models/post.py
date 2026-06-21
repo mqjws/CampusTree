@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import Boolean, Column, DateTime
 from sqlmodel import Field, Relationship, SQLModel
@@ -7,6 +7,7 @@ from sqlmodel import Field, Relationship, SQLModel
 if TYPE_CHECKING:
     from app.models.comment import Comment
     from app.models.like import Like
+    from app.models.topic import Topic
     from app.models.user import User
 
 
@@ -29,6 +30,13 @@ class Post(SQLModel, table=True):
     author_id: int = Field(
         foreign_key="users.id", ondelete="CASCADE", index=True, nullable=False
     )
+    topic_id: int | None = Field(
+        default=None,
+        foreign_key="topics.id",
+        ondelete="SET NULL",
+        index=True,
+        nullable=True,
+    )
     created_at: datetime = Field(
         default_factory=utc_now,
         sa_column=Column(DateTime(timezone=True), nullable=False),
@@ -39,5 +47,6 @@ class Post(SQLModel, table=True):
     )
 
     author: "User" = Relationship(back_populates="posts")
+    topic: Optional["Topic"] = Relationship(back_populates="posts")
     comments: list["Comment"] = Relationship(back_populates="post", cascade_delete=True)
     likes: list["Like"] = Relationship(back_populates="post", cascade_delete=True)

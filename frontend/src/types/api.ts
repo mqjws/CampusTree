@@ -64,6 +64,8 @@ export interface PostDto {
   category: string
   author_id: number
   author_nickname: string
+  topic_id: number | null
+  topic_name: string | null
   allow_comments: boolean
   view_count: number
   comment_count: number
@@ -77,7 +79,20 @@ export interface CreatePostPayload {
   title: string
   content: string
   category: string
+  topic_name?: string | null
   allow_comments: boolean
+}
+
+export interface TopicDto {
+  id: number
+  name: string
+  post_count: number
+  created_at: string
+  updated_at: string
+}
+
+export interface TopicListDto {
+  items: TopicDto[]
 }
 
 export interface CommentDto {

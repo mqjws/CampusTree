@@ -13,6 +13,7 @@ def _post_with_counts(post: Post, comment_count: int, like_count: int) -> Post:
     object.__setattr__(post, "comment_count", int(comment_count))
     object.__setattr__(post, "like_count", int(like_count))
     object.__setattr__(post, "author_nickname", post.author.nickname or post.author.username)
+    object.__setattr__(post, "topic_name", post.topic.name if post.topic else None)
     return post
 
 

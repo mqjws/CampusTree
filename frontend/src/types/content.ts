@@ -17,6 +17,8 @@ export interface PostRecord {
   commentCount: number
   likedByCurrentUser: boolean
   allowComments: boolean
+  topicId: number | null
+  topicName: string | null
   author: AuthorSummary
 }
 
