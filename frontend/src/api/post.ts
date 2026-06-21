@@ -8,9 +8,15 @@ import type {
   UnlikePostDto,
 } from '@/types/api'
 
-export async function listPosts(page = 1, size = 10): Promise<PaginatedData<PostDto>> {
+export type PostSort = 'latest' | 'hot' | 'views' | 'comments' | 'likes'
+
+export async function listPosts(
+  page = 1,
+  size = 10,
+  sort: PostSort = 'latest',
+): Promise<PaginatedData<PostDto>> {
   const response = await request.get<ApiResponse<PaginatedData<PostDto>>>('/posts', {
-    params: { page, size },
+    params: { page, size, sort },
   })
   return response.data.data
 }

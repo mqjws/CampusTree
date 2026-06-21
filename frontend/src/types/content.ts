@@ -12,8 +12,11 @@ export interface PostRecord {
   category: string
   relativeTime: string
   fullTime: string
+  viewCount: number
   likeCount: number
   commentCount: number
+  likedByCurrentUser: boolean
+  allowComments: boolean
   author: AuthorSummary
 }
 

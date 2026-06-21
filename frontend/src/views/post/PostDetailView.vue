@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { ArrowLeft, ChatDotRound, Clock, Pointer } from '@element-plus/icons-vue'
+import { ArrowLeft, ChatDotRound, Clock, Pointer, View } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { useRoute, useRouter } from 'vue-router'
 import AppLayout from '@/components/layout/AppLayout.vue'
@@ -23,6 +23,11 @@ const post = computed(() => postStore.currentPost)
 const comments = computed(() => commentStore.getComments(postId.value))
 
 async function handleCreateComment() {
+  if (post.value && !post.value.allowComments) {
+    ElMessage.warning('该帖子已关闭评论')
+    return
+  }
+
   if (!authStore.isAuthenticated) {
     ElMessage.warning('请先登录后再评论')
     await router.push({
@@ -46,12 +51,31 @@ async function handleCreateComment() {
   }
 }
 
-async function handleLikePost() {
+async function handleToggleLikePost() {
+  if (!authStore.isAuthenticated) {
+    ElMessage.warning('请先登录后再点赞')
+    await router.push({
+      path: '/login',
+      query: { redirect: route.fullPath },
+    })
+    return
+  }
+
+  if (!post.value) {
+    return
+  }
+
   try {
+    if (post.value.likedByCurrentUser) {
+      await postStore.unlike(postId.value)
+      ElMessage.success('已取消点赞')
+      return
+    }
+
     await postStore.like(postId.value)
     ElMessage.success('点赞成功')
   } catch {
-    ElMessage.error('点赞失败或已点赞')
+    ElMessage.error('点赞状态更新失败')
   }
 }
 
@@ -99,9 +123,18 @@ onMounted(() => {
         </div>
 
         <div class="detail-card__stats">
-          <el-button plain size="small" @click="handleLikePost">
+          <span>
+            <el-icon><View /></el-icon>
+            {{ post.viewCount }} 浏览
+          </span>
+          <el-button
+            :type="post.likedByCurrentUser ? 'primary' : 'default'"
+            :plain="!post.likedByCurrentUser"
+            size="small"
+            @click="handleToggleLikePost"
+          >
             <el-icon><Pointer /></el-icon>
-            {{ post.likeCount }} 点赞
+            {{ post.likedByCurrentUser ? '已点赞' : '点赞' }} {{ post.likeCount }}
           </el-button>
           <span>
             <el-icon><ChatDotRound /></el-icon>
@@ -111,7 +144,7 @@ onMounted(() => {
       </template>
     </section>
 
-    <section class="detail-comment-box">
+    <section v-if="post?.allowComments" class="detail-comment-box">
       <div class="detail-comment-box__header">
         <h2>发表评论</h2>
         <p>当前输入区已接入真实创建评论接口。</p>
@@ -134,6 +167,13 @@ onMounted(() => {
         >
           发送评论
         </el-button>
+      </div>
+    </section>
+
+    <section v-else-if="post" class="detail-comment-box detail-comment-box--disabled">
+      <div class="detail-comment-box__header">
+        <h2>评论已关闭</h2>
+        <p>该帖子不接受新评论，已有评论仍会显示在下方。</p>
       </div>
     </section>
 

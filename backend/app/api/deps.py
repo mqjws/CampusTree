@@ -57,3 +57,19 @@ def get_current_user(
 
 
 CurrentUserDep = Annotated[User, Depends(get_current_user)]
+
+
+def get_optional_current_user(
+    session: SessionDep,
+    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer_scheme)],
+) -> User | None:
+    if credentials is None or credentials.scheme.lower() != "bearer":
+        return None
+
+    try:
+        return get_current_user(session, credentials)
+    except HTTPException:
+        return None
+
+
+OptionalCurrentUserDep = Annotated[User | None, Depends(get_optional_current_user)]

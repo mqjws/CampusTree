@@ -40,6 +40,10 @@ function handleSelect(id: number) {
     <footer class="post-card__footer">
       <div class="post-card__stats">
         <span>
+          <el-icon><View /></el-icon>
+          {{ post.viewCount }}
+        </span>
+        <span>
           <el-icon><Pointer /></el-icon>
           {{ post.likeCount }}
         </span>

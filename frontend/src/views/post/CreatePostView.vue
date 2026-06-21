@@ -47,7 +47,7 @@ async function handleSubmit() {
   }
 
   try {
-    await postStore.createPost(form.title, form.content)
+    await postStore.createPost(form.title, form.content, form.allowComments)
     ElMessage.success('帖子创建成功')
     await router.push('/')
   } catch {
@@ -97,7 +97,7 @@ async function handleSubmit() {
         <div class="create-card__options">
           <div>
             <h2>评论开关</h2>
-            <p>当前后端文档暂未提供开关字段，这里仅保留 UI 状态。</p>
+            <p>关闭后，帖子详情页将禁止发布新评论。</p>
           </div>
           <el-switch v-model="form.allowComments" />
         </div>

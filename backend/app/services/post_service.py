@@ -1,4 +1,6 @@
-from sqlalchemy import distinct
+from typing import Literal
+
+from sqlalchemy import desc, distinct
 from sqlmodel import Session, func, select
 
 from app.models.comment import Comment
@@ -8,9 +10,15 @@ from app.models.post import utc_now
 from app.schemas.post import PostCreate, PostUpdate
 
 
-def _post_with_counts(post: Post, comment_count: int, like_count: int) -> Post:
+def _post_with_counts(
+    post: Post,
+    comment_count: int,
+    like_count: int,
+    liked_by_current_user: bool = False,
+) -> Post:
     object.__setattr__(post, "comment_count", int(comment_count))
     object.__setattr__(post, "like_count", int(like_count))
+    object.__setattr__(post, "liked_by_current_user", liked_by_current_user)
     return post
 
 
@@ -18,6 +26,7 @@ def create_post(session: Session, post_create: PostCreate, author_id: int) -> Po
     post = Post(
         title=post_create.title,
         content=post_create.content,
+        allow_comments=post_create.allow_comments,
         author_id=author_id,
     )
     session.add(post)
@@ -30,32 +39,66 @@ def get_posts_paginated(
     session: Session,
     page: int,
     size: int,
+    sort: Literal["latest", "hot", "views", "comments", "likes"] = "latest",
+    current_user_id: int | None = None,
 ) -> tuple[list[Post], int]:
     total_statement = select(func.count()).select_from(Post)
     total = session.exec(total_statement).one()
 
     offset = (page - 1) * size
+    comment_count = func.count(distinct(Comment.id))
+    like_count = func.count(distinct(Like.id))
+    hot_score = Post.view_count + comment_count * 3 + like_count * 2
+    order_by = {
+        "latest": (Post.created_at.desc(),),
+        "hot": (desc(hot_score), Post.created_at.desc()),
+        "views": (Post.view_count.desc(), Post.created_at.desc()),
+        "comments": (desc(comment_count), Post.created_at.desc()),
+        "likes": (desc(like_count), Post.created_at.desc()),
+    }[sort]
+
     statement = (
         select(
             Post,
-            func.count(distinct(Comment.id)),
-            func.count(distinct(Like.id)),
+            comment_count,
+            like_count,
         )
         .outerjoin(Comment, Comment.post_id == Post.id)
         .outerjoin(Like, Like.post_id == Post.id)
         .group_by(Post.id)
-        .order_by(Post.created_at.desc())
+        .order_by(*order_by)
         .offset(offset)
         .limit(size)
     )
     items = [
-        _post_with_counts(post, comment_count, like_count)
+        _post_with_counts(
+            post,
+            comment_count,
+            like_count,
+            _is_liked_by_user(session, post.id, current_user_id),
+        )
         for post, comment_count, like_count in session.exec(statement).all()
     ]
     return items, total
 
 
-def get_post_by_id(session: Session, post_id: int) -> Post | None:
+def _is_liked_by_user(
+    session: Session,
+    post_id: int | None,
+    user_id: int | None,
+) -> bool:
+    if post_id is None or user_id is None:
+        return False
+
+    statement = select(Like.id).where(Like.user_id == user_id, Like.post_id == post_id)
+    return session.exec(statement).first() is not None
+
+
+def get_post_by_id(
+    session: Session,
+    post_id: int,
+    current_user_id: int | None = None,
+) -> Post | None:
     statement = (
         select(
             Post,
@@ -72,7 +115,27 @@ def get_post_by_id(session: Session, post_id: int) -> Post | None:
         return None
 
     post, comment_count, like_count = result
-    return _post_with_counts(post, comment_count, like_count)
+    return _post_with_counts(
+        post,
+        comment_count,
+        like_count,
+        _is_liked_by_user(session, post.id, current_user_id),
+    )
+
+
+def increment_post_view_count(
+    session: Session,
+    post_id: int,
+    current_user_id: int | None = None,
+) -> Post | None:
+    post = session.get(Post, post_id)
+    if post is None:
+        return None
+
+    post.view_count += 1
+    session.add(post)
+    session.commit()
+    return get_post_by_id(session, post_id, current_user_id=current_user_id)
 
 
 def delete_post(session: Session, post: Post) -> None:

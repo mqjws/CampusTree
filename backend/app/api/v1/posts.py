@@ -1,9 +1,9 @@
-from typing import Annotated
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, Query
 from fastapi.responses import JSONResponse
 
-from app.api.deps import CurrentUserDep, SessionDep
+from app.api.deps import CurrentUserDep, OptionalCurrentUserDep, SessionDep
 from app.core.response import error, success
 from app.schemas.post import PostCreate, PostListRead, PostRead, PostUpdate
 from app.services.post_service import (
@@ -11,6 +11,7 @@ from app.services.post_service import (
     delete_post,
     get_post_by_id,
     get_posts_paginated,
+    increment_post_view_count,
     update_post,
 )
 
@@ -21,10 +22,18 @@ router = APIRouter(prefix="/posts", tags=["posts"])
 @router.get("")
 def list_posts(
     session: SessionDep,
+    current_user: OptionalCurrentUserDep,
     page: Annotated[int, Query(ge=1)] = 1,
     size: Annotated[int, Query(ge=1, le=100)] = 10,
+    sort: Literal["latest", "hot", "views", "comments", "likes"] = "latest",
 ):
-    items, total = get_posts_paginated(session, page=page, size=size)
+    items, total = get_posts_paginated(
+        session,
+        page=page,
+        size=size,
+        sort=sort,
+        current_user_id=current_user.id if current_user else None,
+    )
     result = PostListRead(
         items=[PostRead.model_validate(item) for item in items],
         total=total,
@@ -45,8 +54,16 @@ def create_post_api(
 
 
 @router.get("/{post_id}")
-def read_post(post_id: int, session: SessionDep):
-    post = get_post_by_id(session, post_id)
+def read_post(
+    post_id: int,
+    session: SessionDep,
+    current_user: OptionalCurrentUserDep,
+):
+    post = increment_post_view_count(
+        session,
+        post_id,
+        current_user_id=current_user.id if current_user else None,
+    )
     if post is None:
         return JSONResponse(
             status_code=404,

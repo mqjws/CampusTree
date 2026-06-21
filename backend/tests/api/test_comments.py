@@ -33,6 +33,19 @@ def create_post(session: Session, author: User) -> Post:
     return post
 
 
+def create_post_with_comments_disabled(session: Session, author: User) -> Post:
+    post = Post(
+        title="Closed Post",
+        content="This post does not receive comments",
+        author_id=author.id,
+        allow_comments=False,
+    )
+    session.add(post)
+    session.commit()
+    session.refresh(post)
+    return post
+
+
 def create_comment(session: Session, author: User, post: Post, content: str) -> Comment:
     comment = Comment(content=content, author_id=author.id, post_id=post.id)
     session.add(comment)
@@ -60,6 +73,28 @@ def test_create_comment_success(client: TestClient, session: Session):
 
     comment = session.exec(select(Comment).where(Comment.content == "Nice post")).first()
     assert comment is not None
+
+
+def test_create_comment_rejected_when_comments_disabled(
+    client: TestClient, session: Session
+):
+    user = create_user(session, "closedcomments")
+    post = create_post_with_comments_disabled(session, user)
+
+    response = client.post(
+        f"/api/v1/comments/posts/{post.id}/comments",
+        json={"content": "Cannot comment here"},
+        headers=auth_headers(user),
+    )
+
+    assert response.status_code == 403
+    body = response.json()
+    assert body["code"] == 403
+
+    comment = session.exec(
+        select(Comment).where(Comment.content == "Cannot comment here")
+    ).first()
+    assert comment is None
 
 
 def test_list_comments_success(client: TestClient, session: Session):

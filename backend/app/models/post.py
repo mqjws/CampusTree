@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Column, DateTime
+from sqlalchemy import Boolean, Column, DateTime
 from sqlmodel import Field, Relationship, SQLModel
 
 if TYPE_CHECKING:
@@ -20,6 +20,11 @@ class Post(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     title: str = Field(max_length=100, nullable=False)
     content: str = Field(nullable=False)
+    allow_comments: bool = Field(
+        default=True,
+        sa_column=Column(Boolean, nullable=False, server_default="true"),
+    )
+    view_count: int = Field(default=0, ge=0, nullable=False)
     author_id: int = Field(
         foreign_key="users.id", ondelete="CASCADE", index=True, nullable=False
     )

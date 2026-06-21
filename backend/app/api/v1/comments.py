@@ -34,6 +34,12 @@ def create_comment_api(
             content=error(message="post not found", code=404),
         )
 
+    if not post.allow_comments:
+        return JSONResponse(
+            status_code=403,
+            content=error(message="comments are disabled for this post", code=403),
+        )
+
     comment = create_comment(
         session, comment_create, author_id=current_user.id, post_id=post_id
     )

@@ -45,8 +45,11 @@ export function mapPostDtoToRecord(post: PostDto): PostRecord {
     category: '未分类',
     relativeTime: formatRelativeTime(post.created_at),
     fullTime: formatFullTime(post.created_at),
+    viewCount: post.view_count,
     likeCount: post.like_count,
     commentCount: post.comment_count,
+    likedByCurrentUser: post.liked_by_current_user,
+    allowComments: post.allow_comments,
     author: {
       id: post.author_id,
       alias: `用户 #${post.author_id}`,

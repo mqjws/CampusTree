@@ -57,8 +57,11 @@ export interface PostDto {
   title: string
   content: string
   author_id: number
+  allow_comments: boolean
+  view_count: number
   comment_count: number
   like_count: number
+  liked_by_current_user: boolean
   created_at: string
   updated_at: string
 }
@@ -66,6 +69,7 @@ export interface PostDto {
 export interface CreatePostPayload {
   title: string
   content: string
+  allow_comments: boolean
 }
 
 export interface CommentDto {

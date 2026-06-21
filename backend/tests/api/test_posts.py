@@ -26,8 +26,14 @@ def create_post(
     author: User,
     title: str = "Test Post",
     content: str = "This is a test post",
+    view_count: int = 0,
 ) -> Post:
-    post = Post(title=title, content=content, author_id=author.id)
+    post = Post(
+        title=title,
+        content=content,
+        author_id=author.id,
+        view_count=view_count,
+    )
     session.add(post)
     session.commit()
     session.refresh(post)
@@ -65,11 +71,35 @@ def test_create_post_success(client: TestClient, session: Session):
     assert body["data"]["title"] == "New Post"
     assert body["data"]["content"] == "New post content"
     assert body["data"]["author_id"] == user.id
+    assert body["data"]["allow_comments"] is True
+    assert body["data"]["view_count"] == 0
     assert body["data"]["comment_count"] == 0
     assert body["data"]["like_count"] == 0
 
     post = session.exec(select(Post).where(Post.title == "New Post")).first()
     assert post is not None
+
+
+def test_create_post_can_disable_comments(client: TestClient, session: Session):
+    user = create_user(session, "disablepostcomments")
+
+    response = client.post(
+        "/api/v1/posts",
+        json={
+            "title": "No Comments",
+            "content": "New post content",
+            "allow_comments": False,
+        },
+        headers=auth_headers(user),
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["data"]["allow_comments"] is False
+
+    post = session.exec(select(Post).where(Post.title == "No Comments")).first()
+    assert post is not None
+    assert post.allow_comments is False
 
 
 def test_list_posts_success(client: TestClient, session: Session):
@@ -97,6 +127,29 @@ def test_list_posts_success(client: TestClient, session: Session):
     assert counts_by_post_id == {post_one.id: (2, 1), post_two.id: (0, 1)}
 
 
+def test_list_posts_hot_sort_uses_activity_counts(
+    client: TestClient, session: Session
+):
+    author = create_user(session, "hotpostauthor")
+    liker_one = create_user(session, "hotlikerone")
+    liker_two = create_user(session, "hotlikertwo")
+
+    viewed_post = create_post(session, author, title="Viewed Post", view_count=20)
+    discussed_post = create_post(session, author, title="Discussed Post", view_count=5)
+    liked_post = create_post(session, author, title="Liked Post", view_count=5)
+
+    create_comment(session, author, discussed_post, "First discussion")
+    create_comment(session, author, discussed_post, "Second discussion")
+    create_like(session, liker_one, liked_post)
+    create_like(session, liker_two, liked_post)
+
+    response = client.get("/api/v1/posts?page=1&size=10&sort=hot")
+
+    assert response.status_code == 200
+    titles = [item["title"] for item in response.json()["data"]["items"]]
+    assert titles[:3] == ["Viewed Post", "Discussed Post", "Liked Post"]
+
+
 def test_read_post_success(client: TestClient, session: Session):
     user = create_user(session, "readpost")
     post = create_post(session, user, title="Readable Post")
@@ -110,7 +163,29 @@ def test_read_post_success(client: TestClient, session: Session):
     assert body["code"] == 200
     assert body["data"]["id"] == post.id
     assert body["data"]["title"] == "Readable Post"
+    assert body["data"]["view_count"] == 1
     assert body["data"]["comment_count"] == 1
+    assert body["data"]["like_count"] == 1
+    assert body["data"]["liked_by_current_user"] is False
+
+    session.refresh(post)
+    assert post.view_count == 1
+
+
+def test_read_post_marks_current_user_like(client: TestClient, session: Session):
+    author = create_user(session, "likeddetailauthor")
+    liker = create_user(session, "likeddetailuser")
+    post = create_post(session, author, title="Liked Detail Post")
+    create_like(session, liker, post)
+
+    response = client.get(
+        f"/api/v1/posts/{post.id}",
+        headers=auth_headers(liker),
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["data"]["liked_by_current_user"] is True
     assert body["data"]["like_count"] == 1
 
 

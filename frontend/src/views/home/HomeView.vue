@@ -1,24 +1,34 @@
 <script setup lang="ts">
 import { Bell, TrendCharts } from '@element-plus/icons-vue'
-import { onMounted } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import PostCard from '@/components/post/PostCard.vue'
 import { mockNotices, mockTopics } from '@/mock/community'
 import { usePostStore } from '@/stores/modules/post'
 import { useUserStore } from '@/stores/modules/user'
+import type { PostSort } from '@/api/post'
 
 const router = useRouter()
 const postStore = usePostStore()
 const userStore = useUserStore()
+const sortMode = ref<PostSort>('latest')
+const sortOptions = [
+  { label: '最新', value: 'latest' },
+  { label: '热门', value: 'hot' },
+]
 
 function openPost(id: number) {
   router.push(`/post/${id}`)
 }
 
 onMounted(() => {
-  postStore.fetchPosts().catch(() => undefined)
+  postStore.fetchPosts(1, 10, sortMode.value).catch(() => undefined)
   userStore.fetchCurrentUser().catch(() => undefined)
+})
+
+watch(sortMode, (sort) => {
+  postStore.fetchPosts(1, 10, sort).catch(() => undefined)
 })
 </script>
 
@@ -34,7 +44,7 @@ onMounted(() => {
   >
     <section class="home-toolbar">
       <div class="home-toolbar__tabs">
-        <el-segmented :options="['最新', '热门']" model-value="最新" />
+        <el-segmented v-model="sortMode" :options="sortOptions" />
       </div>
       <el-button type="primary" size="large" @click="router.push('/create')">
         发布一条新内容

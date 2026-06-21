@@ -3,6 +3,7 @@ import { defineStore } from 'pinia'
 import * as postApi from '@/api/post'
 import { mapPostDtoToRecord } from '@/utils/mappers'
 import type { PostRecord } from '@/types/content'
+import type { PostSort } from '@/api/post'
 
 export const usePostStore = defineStore('post', () => {
   const posts = ref<PostRecord[]>([])
@@ -13,12 +14,12 @@ export const usePostStore = defineStore('post', () => {
 
   const postList = computed(() => posts.value)
 
-  async function fetchPosts(page = 1, size = 10) {
+  async function fetchPosts(page = 1, size = 10, sort: PostSort = 'latest') {
     loading.value = true
     error.value = null
 
     try {
-      const data = await postApi.listPosts(page, size)
+      const data = await postApi.listPosts(page, size, sort)
       posts.value = data.items.map(mapPostDtoToRecord)
     } catch (err) {
       error.value = '获取帖子列表失败'
@@ -43,12 +44,16 @@ export const usePostStore = defineStore('post', () => {
     }
   }
 
-  async function createPost(title: string, content: string) {
+  async function createPost(title: string, content: string, allowComments = true) {
     creating.value = true
     error.value = null
 
     try {
-      const post = await postApi.createPost({ title, content })
+      const post = await postApi.createPost({
+        title,
+        content,
+        allow_comments: allowComments,
+      })
       const mapped = mapPostDtoToRecord(post)
       posts.value.unshift(mapped)
       currentPost.value = mapped
@@ -63,7 +68,12 @@ export const usePostStore = defineStore('post', () => {
 
   async function like(postId: number) {
     await postApi.likePost(postId)
-    incrementLikeCount(postId)
+    updatePostCount(postId, (post) => {
+      if (!post.likedByCurrentUser) {
+        post.likeCount += 1
+      }
+      post.likedByCurrentUser = true
+    })
   }
 
   function updatePostCount(
@@ -81,18 +91,6 @@ export const usePostStore = defineStore('post', () => {
     }
   }
 
-  function incrementLikeCount(postId: number) {
-    updatePostCount(postId, (post) => {
-      post.likeCount += 1
-    })
-  }
-
-  function decrementLikeCount(postId: number) {
-    updatePostCount(postId, (post) => {
-      post.likeCount = Math.max(0, post.likeCount - 1)
-    })
-  }
-
   function incrementCommentCount(postId: number) {
     updatePostCount(postId, (post) => {
       post.commentCount += 1
@@ -101,7 +99,12 @@ export const usePostStore = defineStore('post', () => {
 
   async function unlike(postId: number) {
     await postApi.unlikePost(postId)
-    decrementLikeCount(postId)
+    updatePostCount(postId, (post) => {
+      if (post.likedByCurrentUser) {
+        post.likeCount = Math.max(0, post.likeCount - 1)
+      }
+      post.likedByCurrentUser = false
+    })
   }
 
   return {
