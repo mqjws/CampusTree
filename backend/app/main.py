@@ -16,7 +16,7 @@ app.add_middleware(
         "http://127.0.0.1:5173",
         "https://campustree.ivano.bond",     # ← 新增
         "https://ivano.bond",                 # ← 新增
-	"https://campustreex.com",             # ← 新增2
+	    "https://campustreex.com",             # ← 新增2
         "https://admin.campustreex.com",       # ← 新增2
     ],
     allow_credentials=True,

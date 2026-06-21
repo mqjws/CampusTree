@@ -25,7 +25,7 @@ export function mapUserToProfile(user: UserDto | null, stats?: ProfileStats): Pr
 
   return {
     userId: `#${user.id}`,
-    nickname: user.username,
+    nickname: user.nickname,
     joinedAt: formatFullTime(user.created_at),
     tagline: '当前用户数据与统计信息均来自真实接口。',
     stats: stats || {
@@ -52,7 +52,7 @@ export function mapPostDtoToRecord(post: PostDto): PostRecord {
     allowComments: post.allow_comments,
     author: {
       id: post.author_id,
-      alias: `用户 #${post.author_id}`,
+      alias: post.author_nickname,
       avatarEmoji: pickEmoji(post.author_id),
     },
   }

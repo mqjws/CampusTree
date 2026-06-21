@@ -14,6 +14,7 @@ export interface PaginatedData<T> {
 export interface UserDto {
   id: number
   username: string
+  nickname: string
   email: string
   avatar_url: string | null
   is_active: boolean
@@ -46,6 +47,10 @@ export interface UpdatePasswordPayload {
   new_password: string
 }
 
+export interface UpdateProfilePayload {
+  nickname: string
+}
+
 export interface LoginDto {
   access_token: string
   token_type: string
@@ -58,6 +63,7 @@ export interface PostDto {
   content: string
   category: string
   author_id: number
+  author_nickname: string
   allow_comments: boolean
   view_count: number
   comment_count: number

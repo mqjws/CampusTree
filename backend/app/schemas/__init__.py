@@ -6,7 +6,14 @@ from app.schemas.comment import (
 )
 from app.schemas.like import LikeCreate, LikeListRead, LikeRead
 from app.schemas.post import PostCreate, PostListRead, PostRead, PostUpdate
-from app.schemas.user import UserCreate, UserLogin, UserLoginRead, UserRead
+from app.schemas.user import (
+    UserCreate,
+    UserLogin,
+    UserLoginRead,
+    UserPasswordUpdate,
+    UserProfileUpdate,
+    UserRead,
+)
 
 __all__ = [
     "CommentCreate",
@@ -23,5 +30,7 @@ __all__ = [
     "UserCreate",
     "UserLogin",
     "UserLoginRead",
+    "UserPasswordUpdate",
+    "UserProfileUpdate",
     "UserRead",
 ]

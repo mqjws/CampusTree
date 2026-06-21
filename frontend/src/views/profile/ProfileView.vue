@@ -17,18 +17,35 @@ interface PasswordForm {
   confirmPassword: string
 }
 
+interface ProfileForm {
+  nickname: string
+}
+
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
 const authStore = useAuthStore()
 const passwordFormRef = ref<FormInstance>()
+const profileFormRef = ref<FormInstance>()
 const passwordSubmitting = ref(false)
+const profileSubmitting = ref(false)
 
 const passwordForm = reactive<PasswordForm>({
   oldPassword: '',
   newPassword: '',
   confirmPassword: '',
 })
+
+const profileForm = reactive<ProfileForm>({
+  nickname: '',
+})
+
+const profileRules: FormRules<ProfileForm> = {
+  nickname: [
+    { required: true, message: '请输入昵称', trigger: 'blur' },
+    { min: 1, max: 50, message: '昵称需在 1 到 50 个字符之间', trigger: 'blur' },
+  ],
+}
 
 const passwordRules: FormRules<PasswordForm> = {
   oldPassword: [{ required: true, message: '请输入当前密码', trigger: 'blur' }],
@@ -80,14 +97,38 @@ const sectionCopy = computed(() => {
 })
 
 onMounted(() => {
-  userStore.fetchCurrentUser().catch(() => undefined)
+  userStore.fetchCurrentUser().then(syncProfileForm).catch(() => undefined)
   userStore.fetchMyPosts().catch(() => undefined)
   userStore.fetchMyComments().catch(() => undefined)
   userStore.fetchMyStats().catch(() => undefined)
 })
 
+function syncProfileForm() {
+  profileForm.nickname = userStore.currentUser?.nickname || ''
+}
+
 function openPost(id: number) {
   router.push(`/post/${id}`)
+}
+
+async function handleUpdateProfile() {
+  const isValid = await profileFormRef.value?.validate().catch(() => false)
+
+  if (!isValid) {
+    return
+  }
+
+  profileSubmitting.value = true
+
+  try {
+    await userStore.updateMyProfile(profileForm.nickname.trim())
+    syncProfileForm()
+    ElMessage.success('昵称已更新')
+  } catch {
+    ElMessage.error('昵称更新失败，请稍后重试')
+  } finally {
+    profileSubmitting.value = false
+  }
 }
 
 async function handleUpdatePassword() {
@@ -244,7 +285,29 @@ async function handleLogout() {
     <section v-else class="profile-settings">
       <article class="profile-panel">
         <h2>账号设置</h2>
-        <p>当前可直接修改密码、清理缓存并退出登录。</p>
+        <p>当前可修改昵称、密码，或清理本地登录状态。</p>
+      </article>
+
+      <article class="profile-setting-card">
+        <h3>个人资料</h3>
+        <el-form
+          ref="profileFormRef"
+          :model="profileForm"
+          :rules="profileRules"
+          label-position="top"
+        >
+          <el-form-item label="昵称" prop="nickname">
+            <el-input v-model.trim="profileForm.nickname" maxlength="50" show-word-limit />
+          </el-form-item>
+          <el-button
+            type="primary"
+            size="large"
+            :loading="profileSubmitting"
+            @click="handleUpdateProfile"
+          >
+            保存昵称
+          </el-button>
+        </el-form>
       </article>
 
       <article class="profile-setting-card">

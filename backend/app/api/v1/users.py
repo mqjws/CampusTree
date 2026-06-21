@@ -13,6 +13,7 @@ from app.schemas.user import (
     UserLogin,
     UserLoginRead,
     UserPasswordUpdate,
+    UserProfileUpdate,
     UserPostListRead,
     UserRead,
     UserStatsRead,
@@ -26,6 +27,7 @@ from app.services.user_service import (
     get_user_by_username,
     get_user_stats,
     update_user_password,
+    update_user_profile,
 )
 from app.services.email_service import EmailConfigError, send_register_code_email
 from app.services.email_verification_service import (
@@ -120,6 +122,16 @@ def login_user(user_login: UserLogin, session: SessionDep):
 @router.get("/me")
 def read_current_user(current_user: CurrentUserDep):
     return success(UserRead.model_validate(current_user).model_dump(mode="json"))
+
+
+@router.put("/me/profile")
+def update_my_profile(
+    payload: UserProfileUpdate,
+    session: SessionDep,
+    current_user: CurrentUserDep,
+):
+    user = update_user_profile(session, current_user, payload.nickname)
+    return success(UserRead.model_validate(user).model_dump(mode="json"))
 
 
 @router.get("/me/posts")

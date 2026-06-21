@@ -12,6 +12,7 @@ from app.schemas.user import UserCreate
 def _post_with_counts(post: Post, comment_count: int, like_count: int) -> Post:
     object.__setattr__(post, "comment_count", int(comment_count))
     object.__setattr__(post, "like_count", int(like_count))
+    object.__setattr__(post, "author_nickname", post.author.nickname or post.author.username)
     return post
 
 
@@ -37,6 +38,7 @@ def get_user_by_account(session: Session, account: str) -> User | None:
 def create_user(session: Session, user_create: UserCreate) -> User:
     user = User(
         username=user_create.username,
+        nickname=user_create.username,
         email=str(user_create.email),
         hashed_password=get_password_hash(user_create.password),
     )
@@ -108,3 +110,11 @@ def update_user_password(
     session.commit()
     session.refresh(user)
     return True, "password updated"
+
+
+def update_user_profile(session: Session, user: User, nickname: str) -> User:
+    user.nickname = nickname.strip()
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+    return user

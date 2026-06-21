@@ -2,6 +2,7 @@ import request from './request'
 import type {
   ApiResponse,
   UpdatePasswordPayload,
+  UpdateProfilePayload,
   UserCommentListDto,
   UserPostListDto,
   UserStatsDto,
@@ -35,5 +36,10 @@ export async function updateMyPassword(
     '/users/me/password',
     payload,
   )
+  return response.data.data
+}
+
+export async function updateMyProfile(payload: UpdateProfilePayload): Promise<UserDto> {
+  const response = await request.put<ApiResponse<UserDto>>('/users/me/profile', payload)
   return response.data.data
 }

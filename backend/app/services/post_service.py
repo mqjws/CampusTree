@@ -7,6 +7,7 @@ from app.models.comment import Comment
 from app.models.like import Like
 from app.models.post import Post
 from app.models.post import utc_now
+from app.models.user import User
 from app.schemas.post import PostCreate, PostUpdate
 
 
@@ -19,6 +20,7 @@ def _post_with_counts(
     object.__setattr__(post, "comment_count", int(comment_count))
     object.__setattr__(post, "like_count", int(like_count))
     object.__setattr__(post, "liked_by_current_user", liked_by_current_user)
+    object.__setattr__(post, "author_nickname", post.author.nickname or post.author.username)
     return post
 
 
@@ -71,8 +73,9 @@ def get_posts_paginated(
         )
         .outerjoin(Comment, Comment.post_id == Post.id)
         .outerjoin(Like, Like.post_id == Post.id)
+        .join(User, User.id == Post.author_id)
         .where(*filters)
-        .group_by(Post.id)
+        .group_by(Post.id, User.id)
         .order_by(*order_by)
         .offset(offset)
         .limit(size)
@@ -114,8 +117,9 @@ def get_post_by_id(
         )
         .outerjoin(Comment, Comment.post_id == Post.id)
         .outerjoin(Like, Like.post_id == Post.id)
+        .join(User, User.id == Post.author_id)
         .where(Post.id == post_id)
-        .group_by(Post.id)
+        .group_by(Post.id, User.id)
     )
     result = session.exec(statement).first()
     if result is None:

@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.schemas.comment import CommentRead
 from app.schemas.post import PostRead
@@ -35,9 +35,22 @@ class UserPasswordUpdate(BaseModel):
     new_password: str = Field(min_length=5, max_length=72)
 
 
+class UserProfileUpdate(BaseModel):
+    nickname: str = Field(min_length=1, max_length=50)
+
+    @field_validator("nickname")
+    @classmethod
+    def validate_nickname(cls, value: str) -> str:
+        nickname = value.strip()
+        if not nickname:
+            raise ValueError("nickname must not be blank")
+        return nickname
+
+
 class UserRead(BaseModel):
     id: int
     username: str
+    nickname: str
     email: str
     avatar_url: str | None = None
     is_active: bool

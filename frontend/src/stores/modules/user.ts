@@ -82,6 +82,20 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
+  async function updateMyProfile(nickname: string) {
+    loading.value = true
+    error.value = null
+
+    try {
+      currentUser.value = await userApi.updateMyProfile({ nickname })
+    } catch (err) {
+      error.value = '更新个人资料失败'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
   function clearUser() {
     currentUser.value = null
     myPosts.value = []
@@ -105,6 +119,7 @@ export const useUserStore = defineStore('user', () => {
     fetchMyPosts,
     fetchMyComments,
     fetchMyStats,
+    updateMyProfile,
     clearUser,
   }
 })

@@ -23,6 +23,7 @@ class PostRead(BaseModel):
     content: str
     category: str = "未分类"
     author_id: int
+    author_nickname: str
     allow_comments: bool = True
     view_count: int = 0
     comment_count: int = 0
