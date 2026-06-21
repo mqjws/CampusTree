@@ -84,7 +84,9 @@ export interface CommentDto {
   id: number
   content: string
   author_id: number
+  author_nickname: string | null
   post_id: number
+  post_title: string | null
   created_at: string
   updated_at: string
 }
@@ -117,4 +119,7 @@ export interface UserStatsDto {
   post_count: number
   comment_count: number
   like_count: number
+  view_count: number
+  latest_post_at: string | null
+  latest_comment_at: string | null
 }

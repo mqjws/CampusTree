@@ -13,6 +13,9 @@ export const useUserStore = defineStore('user', () => {
     posts: 0,
     comments: 0,
     likes: 0,
+    views: 0,
+    latestPostAt: null,
+    latestCommentAt: null,
   })
   const loading = ref(false)
   const error = ref<string | null>(null)
@@ -73,6 +76,9 @@ export const useUserStore = defineStore('user', () => {
         posts: data.post_count,
         comments: data.comment_count,
         likes: data.like_count,
+        views: data.view_count,
+        latestPostAt: data.latest_post_at,
+        latestCommentAt: data.latest_comment_at,
       }
     } catch (err) {
       error.value = '获取用户统计失败'
@@ -104,6 +110,9 @@ export const useUserStore = defineStore('user', () => {
       posts: 0,
       comments: 0,
       likes: 0,
+      views: 0,
+      latestPostAt: null,
+      latestCommentAt: null,
     }
   }
 

@@ -78,3 +78,6 @@ class UserStatsRead(BaseModel):
     post_count: int
     comment_count: int
     like_count: int
+    view_count: int
+    latest_post_at: datetime | None = None
+    latest_comment_at: datetime | None = None

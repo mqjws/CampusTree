@@ -2,7 +2,17 @@
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { computed, onMounted, reactive, ref } from 'vue'
-import { EditPen, MessageBox, Setting, Tickets } from '@element-plus/icons-vue'
+import {
+  Calendar,
+  ChatDotRound,
+  EditPen,
+  MessageBox,
+  Pointer,
+  Setting,
+  Tickets,
+  User,
+  View,
+} from '@element-plus/icons-vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import CommentList from '@/components/comment/CommentList.vue'
@@ -10,6 +20,7 @@ import PostCard from '@/components/post/PostCard.vue'
 import { useAuthStore } from '@/stores/modules/auth'
 import { useUserStore } from '@/stores/modules/user'
 import * as userApi from '@/api/user'
+import { formatFullTime, formatRelativeTime } from '@/utils/format'
 
 interface PasswordForm {
   oldPassword: string
@@ -87,13 +98,33 @@ const section = computed(() => {
 
 const sectionCopy = computed(() => {
   const map = {
-    overview: '用户基础信息、统计数据、我的帖子和我的评论都已接入真实接口。',
+    overview: '查看账号资料、内容统计、最近动态和常用操作。',
     posts: '这里展示当前登录用户发布的真实帖子列表。',
     comments: '这里展示当前登录用户发表的真实评论列表。',
     settings: '设置页已补齐最小可用功能：修改密码、清理缓存、退出登录。',
   }
 
   return map[section.value]
+})
+
+const recentPosts = computed(() => userStore.myPosts.slice(0, 5))
+const recentComments = computed(() => userStore.myComments.slice(0, 3))
+
+const latestActivity = computed(() => {
+  const dates = [
+    userStore.profile.stats.latestPostAt,
+    userStore.profile.stats.latestCommentAt,
+  ].filter(Boolean) as string[]
+
+  if (dates.length === 0) {
+    return null
+  }
+
+  return dates.sort((a, b) => new Date(b).getTime() - new Date(a).getTime())[0]
+})
+
+const latestActivityText = computed(() => {
+  return latestActivity.value ? formatRelativeTime(latestActivity.value) : '暂无动态'
 })
 
 onMounted(() => {
@@ -253,18 +284,142 @@ async function handleLogout() {
     </section>
 
     <section v-if="section === 'overview'" class="profile-panels">
-      <article class="profile-panel">
-        <h2>当前联调状态</h2>
-        <p>用户中心的核心展示数据已切换到真实后端接口。</p>
+      <article class="profile-panel profile-panel--summary">
+        <div>
+          <h2>资料摘要</h2>
+          <p>登录身份和公开昵称分开展示，昵称会用于帖子作者名。</p>
+        </div>
+        <div class="profile-summary-grid">
+          <div>
+            <span>公开昵称</span>
+            <strong>{{ userStore.profile.nickname }}</strong>
+          </div>
+          <div>
+            <span>用户名</span>
+            <strong>{{ userStore.currentUser?.username || '--' }}</strong>
+          </div>
+          <div>
+            <span>邮箱</span>
+            <strong>{{ userStore.currentUser?.email || '--' }}</strong>
+          </div>
+          <div>
+            <span>注册时间</span>
+            <strong>{{ userStore.profile.joinedAt }}</strong>
+          </div>
+        </div>
       </article>
-      <el-empty v-if="userStore.myPosts.length === 0" description="当前用户还没有发布帖子" />
-      <PostCard
-        v-for="post in userStore.myPosts.slice(0, 2)"
-        v-else
-        :key="post.id"
-        :post="post"
-        @select="openPost"
-      />
+
+      <section class="profile-overview-grid">
+        <article class="profile-panel">
+          <h2>内容统计</h2>
+          <div class="profile-metric-list">
+            <div>
+              <el-icon><Tickets /></el-icon>
+              <span>发布帖子</span>
+              <strong>{{ userStore.profile.stats.posts }}</strong>
+            </div>
+            <div>
+              <el-icon><ChatDotRound /></el-icon>
+              <span>发表评论</span>
+              <strong>{{ userStore.profile.stats.comments }}</strong>
+            </div>
+            <div>
+              <el-icon><Pointer /></el-icon>
+              <span>收到互动</span>
+              <strong>{{ userStore.profile.stats.likes }}</strong>
+            </div>
+            <div>
+              <el-icon><View /></el-icon>
+              <span>内容浏览</span>
+              <strong>{{ userStore.profile.stats.views }}</strong>
+            </div>
+          </div>
+        </article>
+
+        <article class="profile-panel">
+          <h2>活跃度摘要</h2>
+          <div class="profile-activity">
+            <div>
+              <el-icon><Calendar /></el-icon>
+              <span>最近动态</span>
+              <strong>{{ latestActivityText }}</strong>
+            </div>
+            <p>
+              最近发帖：
+              {{
+                userStore.profile.stats.latestPostAt
+                  ? formatFullTime(userStore.profile.stats.latestPostAt)
+                  : '暂无'
+              }}
+            </p>
+            <p>
+              最近评论：
+              {{
+                userStore.profile.stats.latestCommentAt
+                  ? formatFullTime(userStore.profile.stats.latestCommentAt)
+                  : '暂无'
+              }}
+            </p>
+          </div>
+        </article>
+      </section>
+
+      <article class="profile-panel">
+        <div class="profile-panel__header">
+          <h2>最近发布</h2>
+          <el-button text type="primary" @click="router.push('/profile/posts')">查看全部</el-button>
+        </div>
+        <el-empty v-if="recentPosts.length === 0" description="当前用户还没有发布帖子" />
+        <PostCard
+          v-for="post in recentPosts"
+          v-else
+          :key="post.id"
+          :post="post"
+          @select="openPost"
+        />
+      </article>
+
+      <article class="profile-panel">
+        <div class="profile-panel__header">
+          <h2>最近评论</h2>
+          <el-button text type="primary" @click="router.push('/profile/comments')">查看全部</el-button>
+        </div>
+        <el-empty v-if="recentComments.length === 0" description="当前用户还没有发表过评论" />
+        <div v-else class="profile-comment-preview">
+          <button
+            v-for="comment in recentComments"
+            :key="comment.id"
+            type="button"
+            @click="openPost(comment.postId)"
+          >
+            <span>{{ comment.postTitle }}</span>
+            <p>{{ comment.content }}</p>
+            <small>{{ comment.relativeTime }}</small>
+          </button>
+        </div>
+      </article>
+
+      <article class="profile-panel">
+        <h2>快捷操作</h2>
+        <div class="profile-actions">
+          <el-button size="large" @click="router.push('/profile/settings')">
+            <el-icon><User /></el-icon>
+            修改昵称
+          </el-button>
+          <el-button size="large" @click="router.push('/profile/settings')">
+            <el-icon><Setting /></el-icon>
+            修改密码
+          </el-button>
+          <el-button size="large" @click="router.push('/profile/posts')">
+            <el-icon><EditPen /></el-icon>
+            我的帖子
+          </el-button>
+          <el-button size="large" @click="router.push('/profile/comments')">
+            <el-icon><MessageBox /></el-icon>
+            我的评论
+          </el-button>
+        </div>
+      </article>
     </section>
 
     <section v-else-if="section === 'posts'" class="profile-panels">
@@ -440,12 +595,172 @@ async function handleLogout() {
   gap: var(--space-16);
 }
 
+.profile-overview-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-16);
+}
+
+.profile-panel--summary {
+  display: grid;
+  gap: var(--space-16);
+}
+
+.profile-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-12);
+  margin-bottom: var(--space-16);
+}
+
 .profile-panel h2,
 .profile-setting-card h3 {
   margin-bottom: var(--space-8);
   color: var(--color-text-primary);
   font-size: 18px;
   font-weight: 600;
+}
+
+.profile-panel__header h2 {
+  margin-bottom: 0;
+}
+
+.profile-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-12);
+}
+
+.profile-summary-grid div,
+.profile-metric-list div,
+.profile-activity div {
+  min-width: 0;
+  padding: var(--space-16);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-12);
+  background: linear-gradient(180deg, #ffffff 0%, #f8fcfa 100%);
+}
+
+.profile-summary-grid span,
+.profile-metric-list span,
+.profile-activity span {
+  display: block;
+  margin-bottom: var(--space-8);
+  color: var(--color-text-secondary);
+  font-size: 13px;
+}
+
+.profile-summary-grid strong,
+.profile-metric-list strong,
+.profile-activity strong {
+  display: block;
+  overflow: hidden;
+  color: var(--color-text-primary);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.5;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-summary-grid strong {
+  overflow: visible;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+  white-space: normal;
+}
+
+.profile-metric-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-12);
+}
+
+.profile-metric-list div {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.profile-metric-list .el-icon,
+.profile-activity .el-icon {
+  color: var(--color-primary);
+  font-size: 20px;
+}
+
+.profile-metric-list strong {
+  font-size: 24px;
+}
+
+.profile-activity {
+  display: grid;
+  gap: var(--space-12);
+}
+
+.profile-activity div {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.profile-comment-preview {
+  display: grid;
+  gap: var(--space-12);
+}
+
+.profile-comment-preview button {
+  display: grid;
+  gap: var(--space-8);
+  width: 100%;
+  padding: var(--space-12);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-8);
+  color: inherit;
+  background: var(--color-bg-card);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 200ms ease,
+    box-shadow 200ms ease;
+}
+
+.profile-comment-preview button:hover {
+  border-color: rgba(16, 185, 129, 0.22);
+  box-shadow: var(--shadow-hover);
+}
+
+.profile-comment-preview span {
+  overflow: hidden;
+  color: var(--color-text-primary);
+  font-size: 14px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-comment-preview p {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--color-text-primary);
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.profile-comment-preview small {
+  color: var(--color-text-secondary);
+  font-size: 13px;
+}
+
+.profile-actions {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-12);
+}
+
+.profile-actions .el-button {
+  width: 100%;
+  margin-left: 0;
 }
 
 .profile-settings__grid {
@@ -471,6 +786,10 @@ async function handleLogout() {
   }
 
   .profile-overview__stats,
+  .profile-overview-grid,
+  .profile-summary-grid,
+  .profile-metric-list,
+  .profile-actions,
   .profile-settings__grid {
     grid-template-columns: minmax(0, 1fr);
   }

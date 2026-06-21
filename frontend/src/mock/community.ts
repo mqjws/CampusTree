@@ -75,6 +75,9 @@ export const mockCommentsByPostId: Record<number, CommentRecord[]> = {
       id: 201,
       content: '感谢分享，明天就去试试这个位置。',
       relativeTime: '3 分钟前',
+      fullTime: '2026-06-18 19:47',
+      postId: 1,
+      postTitle: '图书馆三楼靠窗的位置下午四点后最安静',
       likeCount: 8,
       author: {
         id: 301,
@@ -86,6 +89,9 @@ export const mockCommentsByPostId: Record<number, CommentRecord[]> = {
       id: 202,
       content: '靠窗的位置光线确实好，就是插座比较少。',
       relativeTime: '14 分钟前',
+      fullTime: '2026-06-18 19:36',
+      postId: 1,
+      postTitle: '图书馆三楼靠窗的位置下午四点后最安静',
       likeCount: 5,
       author: {
         id: 302,
@@ -97,6 +103,9 @@ export const mockCommentsByPostId: Record<number, CommentRecord[]> = {
       id: 203,
       content: '周末去会不会人更多？',
       relativeTime: '27 分钟前',
+      fullTime: '2026-06-18 19:23',
+      postId: 1,
+      postTitle: '图书馆三楼靠窗的位置下午四点后最安静',
       likeCount: 2,
       author: {
         id: 303,
@@ -110,6 +119,9 @@ export const mockCommentsByPostId: Record<number, CommentRecord[]> = {
       id: 204,
       content: '我昨天也吃了，辣度比想象中稳定。',
       relativeTime: '12 分钟前',
+      fullTime: '2026-06-18 19:38',
+      postId: 2,
+      postTitle: '食堂新开的麻辣香锅窗口比预想中稳很多',
       likeCount: 4,
       author: {
         id: 304,
@@ -123,6 +135,9 @@ export const mockCommentsByPostId: Record<number, CommentRecord[]> = {
       id: 205,
       content: '今年路过真的会忍不住多停几分钟。',
       relativeTime: '18 分钟前',
+      fullTime: '2026-06-18 19:32',
+      postId: 3,
+      postTitle: '这周社团招新的摊位布置比往年认真很多',
       likeCount: 3,
       author: {
         id: 305,
@@ -162,6 +177,9 @@ export const mockProfile: ProfileRecord = {
     posts: 12,
     comments: 45,
     likes: 86,
+    views: 1280,
+    latestPostAt: '2026-06-18T19:45:00+08:00',
+    latestCommentAt: '2026-06-18T19:47:00+08:00',
   },
 }
 

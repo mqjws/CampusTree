@@ -5,6 +5,15 @@ from app.models.comment import utc_now
 from app.schemas.comment import CommentCreate, CommentUpdate
 
 
+def _comment_with_author(comment: Comment) -> Comment:
+    object.__setattr__(
+        comment,
+        "author_nickname",
+        comment.author.nickname or comment.author.username,
+    )
+    return comment
+
+
 def create_comment(
     session: Session, comment_create: CommentCreate, author_id: int, post_id: int
 ) -> Comment:
@@ -16,7 +25,7 @@ def create_comment(
     session.add(comment)
     session.commit()
     session.refresh(comment)
-    return comment
+    return _comment_with_author(comment)
 
 
 def get_comments_by_post_paginated(
@@ -38,12 +47,13 @@ def get_comments_by_post_paginated(
         .offset(offset)
         .limit(size)
     )
-    items = list(session.exec(statement).all())
+    items = [_comment_with_author(comment) for comment in session.exec(statement).all()]
     return items, total
 
 
 def get_comment_by_id(session: Session, comment_id: int) -> Comment | None:
-    return session.get(Comment, comment_id)
+    comment = session.get(Comment, comment_id)
+    return _comment_with_author(comment) if comment else None
 
 
 def update_comment(
@@ -57,7 +67,7 @@ def update_comment(
     session.add(comment)
     session.commit()
     session.refresh(comment)
-    return comment
+    return _comment_with_author(comment)
 
 
 def delete_comment(session: Session, comment: Comment) -> None:

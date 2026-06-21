@@ -19,6 +19,9 @@ export function mapUserToProfile(user: UserDto | null, stats?: ProfileStats): Pr
         posts: 0,
         comments: 0,
         likes: 0,
+        views: 0,
+        latestPostAt: null,
+        latestCommentAt: null,
       },
     }
   }
@@ -28,11 +31,14 @@ export function mapUserToProfile(user: UserDto | null, stats?: ProfileStats): Pr
     nickname: user.nickname,
     joinedAt: formatFullTime(user.created_at),
     tagline: '当前用户数据与统计信息均来自真实接口。',
-    stats: stats || {
-      posts: 0,
-      comments: 0,
-      likes: 0,
-    },
+      stats: stats || {
+        posts: 0,
+        comments: 0,
+        likes: 0,
+        views: 0,
+        latestPostAt: null,
+        latestCommentAt: null,
+      },
   }
 }
 
@@ -63,10 +69,13 @@ export function mapCommentDtoToRecord(comment: CommentDto): CommentRecord {
     id: comment.id,
     content: comment.content,
     relativeTime: formatRelativeTime(comment.created_at),
+    fullTime: formatFullTime(comment.created_at),
+    postId: comment.post_id,
+    postTitle: comment.post_title || `帖子 #${comment.post_id}`,
     likeCount: 0,
     author: {
       id: comment.author_id,
-      alias: `用户 #${comment.author_id}`,
+      alias: comment.author_nickname || `用户 #${comment.author_id}`,
       avatarEmoji: pickEmoji(comment.author_id),
     },
   }

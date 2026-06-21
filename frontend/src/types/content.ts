@@ -24,6 +24,9 @@ export interface CommentRecord {
   id: number
   content: string
   relativeTime: string
+  fullTime: string
+  postId: number
+  postTitle: string
   likeCount: number
   author: AuthorSummary
 }
@@ -44,6 +47,9 @@ export interface ProfileStats {
   posts: number
   comments: number
   likes: number
+  views: number
+  latestPostAt: string | null
+  latestCommentAt: string | null
 }
 
 export interface ProfileRecord {

@@ -15,7 +15,9 @@ class CommentRead(BaseModel):
     id: int
     content: str
     author_id: int
+    author_nickname: str | None = None
     post_id: int
+    post_title: str | None = None
     created_at: datetime
     updated_at: datetime
 

@@ -73,7 +73,15 @@ def get_comments_by_user_id(session: Session, user_id: int) -> list[Comment]:
         .where(Comment.author_id == user_id)
         .order_by(Comment.created_at.desc())
     )
-    return list(session.exec(statement).all())
+    comments = list(session.exec(statement).all())
+    for comment in comments:
+        object.__setattr__(
+            comment,
+            "author_nickname",
+            comment.author.nickname or comment.author.username,
+        )
+        object.__setattr__(comment, "post_title", comment.post.title)
+    return comments
 
 
 def get_user_stats(session: Session, user_id: int) -> dict[str, int]:
@@ -87,15 +95,34 @@ def get_user_stats(session: Session, user_id: int) -> dict[str, int]:
         .join(Post, Like.post_id == Post.id)
         .where(Post.author_id == user_id)
     )
+    view_count_statement = (
+        select(func.coalesce(func.sum(Post.view_count), 0))
+        .select_from(Post)
+        .where(Post.author_id == user_id)
+    )
+    latest_post_at_statement = (
+        select(func.max(Post.created_at)).select_from(Post).where(Post.author_id == user_id)
+    )
+    latest_comment_at_statement = (
+        select(func.max(Comment.created_at))
+        .select_from(Comment)
+        .where(Comment.author_id == user_id)
+    )
 
     post_count = session.exec(post_count_statement).one()
     comment_count = session.exec(comment_count_statement).one()
     like_count = session.exec(like_count_statement).one()
+    view_count = session.exec(view_count_statement).one()
+    latest_post_at = session.exec(latest_post_at_statement).one()
+    latest_comment_at = session.exec(latest_comment_at_statement).one()
 
     return {
         "post_count": int(post_count),
         "comment_count": int(comment_count),
         "like_count": int(like_count),
+        "view_count": int(view_count),
+        "latest_post_at": latest_post_at,
+        "latest_comment_at": latest_comment_at,
     }
 
 
