@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Column, DateTime
+from sqlalchemy import Column, DateTime, String
 from sqlmodel import Field, Relationship, SQLModel
 
 if TYPE_CHECKING:
@@ -23,6 +23,11 @@ class User(SQLModel, table=True):
     email: str = Field(index=True, unique=True, max_length=255, nullable=False)
     hashed_password: str = Field(max_length=255, nullable=False)
     avatar_url: str | None = Field(default=None, max_length=500)
+    role: str = Field(
+        default="user",
+        max_length=16,
+        sa_column=Column(String(16), nullable=False, server_default="user"),
+    )
     is_active: bool = Field(default=True, nullable=False)
     created_at: datetime = Field(
         default_factory=utc_now,

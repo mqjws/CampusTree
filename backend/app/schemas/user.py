@@ -53,6 +53,7 @@ class UserRead(BaseModel):
     nickname: str
     email: str
     avatar_url: str | None = None
+    role: str = "user"
     is_active: bool
     created_at: datetime
     updated_at: datetime

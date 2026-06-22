@@ -7,6 +7,7 @@ const homePage = () => import('@/views/home/HomeView.vue')
 const postDetailPage = () => import('@/views/post/PostDetailView.vue')
 const createPostPage = () => import('@/views/post/CreatePostView.vue')
 const profilePage = () => import('@/views/profile/ProfileView.vue')
+const adminSensitiveWordsPage = () => import('@/views/admin/AdminSensitiveWordsView.vue')
 
 export const routes: RouteRecordRaw[] = [
   {
@@ -98,6 +99,15 @@ export const routes: RouteRecordRaw[] = [
       title: '系统错误 - CampusTree',
       requiresAuth: false,
       placeholder: 'Error',
+    },
+  },
+  {
+    path: '/admin/sensitive-words',
+    name: 'AdminSensitiveWords',
+    component: adminSensitiveWordsPage,
+    meta: {
+      title: '敏感词管理 - CampusTree',
+      requiresAuth: true,
     },
   },
   {

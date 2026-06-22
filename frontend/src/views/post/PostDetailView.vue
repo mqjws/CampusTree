@@ -46,8 +46,9 @@ async function handleCreateComment() {
     postStore.incrementCommentCount(postId.value)
     ElMessage.success('评论已提交')
     commentDraft.value = ''
-  } catch {
-    ElMessage.error('评论提交失败')
+  } catch (err: any) {
+    const msg = err?.response?.data?.message || '评论提交失败'
+    ElMessage.error(msg)
   }
 }
 

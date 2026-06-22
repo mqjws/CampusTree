@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { House, Plus, User } from '@element-plus/icons-vue'
+import { computed, onMounted } from 'vue'
+import { Setting, House, Plus, User } from '@element-plus/icons-vue'
 import { useRoute } from 'vue-router'
+import { useUserStore } from '@/stores/modules/user'
 
 type NavItem = {
   label: string
@@ -11,6 +12,7 @@ type NavItem = {
 }
 
 const route = useRoute()
+const userStore = useUserStore()
 
 const navItems: NavItem[] = [
   {
@@ -33,7 +35,13 @@ const navItems: NavItem[] = [
   },
 ]
 
+const isAdmin = computed(() => userStore.currentUser?.role === 'admin')
+
 const activePath = computed(() => route.path)
+
+onMounted(() => {
+  userStore.fetchCurrentUser().catch(() => undefined)
+})
 </script>
 
 <template>
@@ -60,6 +68,15 @@ const activePath = computed(() => route.path)
         >
           <el-icon class="app-header__link-icon"><component :is="item.icon" /></el-icon>
           <span>{{ item.label }}</span>
+        </RouterLink>
+        <RouterLink
+          v-if="isAdmin"
+          :to="'/admin/sensitive-words'"
+          class="app-header__link app-header__link--text"
+          :class="{ 'is-active': activePath === '/admin/sensitive-words' }"
+        >
+          <el-icon class="app-header__link-icon"><component :is="Setting" /></el-icon>
+          <span>管理</span>
         </RouterLink>
         <a
           class="app-header__intro-link"

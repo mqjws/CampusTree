@@ -14,6 +14,7 @@ from app.services.post_service import (
     increment_post_view_count,
     update_post,
 )
+from app.services.sensitive_word_service import check_sensitive_words
 
 
 router = APIRouter(prefix="/posts", tags=["posts"])
@@ -55,6 +56,15 @@ def create_post_api(
     session: SessionDep,
     current_user: CurrentUserDep,
 ):
+    matched = check_sensitive_words(session, post_create.content)
+    if matched:
+        return JSONResponse(
+            status_code=400,
+            content=error(
+                message=f"内容包含敏感词：{', '.join(matched)}", code=400
+            ),
+        )
+
     post = create_post(session, post_create, author_id=current_user.id)
     return success(PostRead.model_validate(post).model_dump(mode="json"))
 

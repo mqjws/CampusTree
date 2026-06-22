@@ -106,14 +106,20 @@ function hasDraftContent(draft: Omit<PostDraft, 'savedAt'>): boolean {
   )
 }
 
-async function fetchTopicOptions(keyword?: string) {
+const defaultTopics = ['生活', '校园', '吐槽', '学习', '美食', '情感', '考研', '就业', '二手', '失物招领']
+
+async function fetchTopicOptions() {
   loadingTopics.value = true
 
   try {
-    const data = await topicApi.listTopics(keyword, 50)
-    topicOptions.value = data.items
+    const data = await topicApi.listTopics(undefined, 50)
+    const existingNames = new Set(data.items.map((t) => t.name))
+    const defaults: TopicDto[] = defaultTopics
+      .filter((name) => !existingNames.has(name))
+      .map((name, i) => ({ id: -(i + 1), name, post_count: 0, created_at: '', updated_at: '' }))
+    topicOptions.value = [...defaults, ...data.items]
   } catch {
-    topicOptions.value = []
+    topicOptions.value = defaultTopics.map((name, i) => ({ id: -(i + 1), name, post_count: 0, created_at: '', updated_at: '' }))
   } finally {
     loadingTopics.value = false
   }
@@ -209,8 +215,9 @@ async function handleSubmit() {
     clearDraft()
     ElMessage.success('帖子创建成功')
     await router.push('/')
-  } catch {
-    ElMessage.error('帖子创建失败')
+  } catch (err: any) {
+    const msg = err?.response?.data?.message || '帖子创建失败'
+    ElMessage.error(msg)
   }
 }
 </script>
@@ -250,9 +257,8 @@ async function handleSubmit() {
             default-first-option
             clearable
             :loading="loadingTopics"
-            placeholder="选择已有话题，或输入 自定义话题(不用加#)"
+            placeholder="输入关键词搜索话题，或直接输入新话题名（无需加 #）"
             size="large"
-            @filter="fetchTopicOptions"
             @visible-change="(visible: boolean) => visible && fetchTopicOptions()"
           >
             <el-option

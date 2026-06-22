@@ -59,6 +59,18 @@ def get_current_user(
 CurrentUserDep = Annotated[User, Depends(get_current_user)]
 
 
+def get_admin_user(current_user: CurrentUserDep) -> User:
+    if current_user.role != "admin":
+        raise HTTPException(
+            status_code=403,
+            detail=error(message="admin privileges required", code=403),
+        )
+    return current_user
+
+
+AdminUserDep = Annotated[User, Depends(get_admin_user)]
+
+
 def get_optional_current_user(
     session: SessionDep,
     credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer_scheme)],

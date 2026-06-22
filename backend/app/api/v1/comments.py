@@ -14,6 +14,7 @@ from app.services.comment_service import (
     update_comment,
 )
 from app.services.post_service import get_post_by_id
+from app.services.sensitive_word_service import check_sensitive_words
 
 
 router = APIRouter(prefix="/comments", tags=["comments"])
@@ -38,6 +39,15 @@ def create_comment_api(
         return JSONResponse(
             status_code=403,
             content=error(message="comments are disabled for this post", code=403),
+        )
+
+    matched = check_sensitive_words(session, comment_create.content)
+    if matched:
+        return JSONResponse(
+            status_code=400,
+            content=error(
+                message=f"内容包含敏感词：{', '.join(matched)}", code=400
+            ),
         )
 
     comment = create_comment(
