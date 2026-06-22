@@ -122,8 +122,13 @@ async function handleSendEmailCode() {
   sendingEmailCode.value = true
 
   try {
-    await sendEmailCode({ email: form.email })
-    ElMessage.success('验证码已发送，请查收邮箱')
+    const result = await sendEmailCode({ email: form.email })
+    if (result.code) {
+      form.emailCode = result.code
+      ElMessage.success(`验证码已发送（开发模式，已自动填入：${result.code}）`)
+    } else {
+      ElMessage.success('验证码已发送，请查收邮箱')
+    }
     startEmailCodeCountdown()
   } catch {
     ElMessage.error('验证码发送失败，请稍后重试')

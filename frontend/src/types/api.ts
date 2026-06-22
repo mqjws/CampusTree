@@ -17,6 +17,7 @@ export interface UserDto {
   nickname: string
   email: string
   avatar_url: string | null
+  role: string
   is_active: boolean
   created_at: string
   updated_at: string
@@ -40,6 +41,7 @@ export interface EmailCodePayload {
 
 export interface EmailCodeDto {
   sent: boolean
+  code?: string
 }
 
 export interface UpdatePasswordPayload {
@@ -149,4 +151,19 @@ export interface UserActivityDto {
 
 export interface UserActivityListDto {
   items: UserActivityDto[]
+}
+
+export interface SensitiveWordDto {
+  id: number
+  word: string
+  created_at: string
+}
+
+export interface SensitiveWordListDto {
+  items: SensitiveWordDto[]
+  total: number
+}
+
+export interface SensitiveWordCreatePayload {
+  word: string
 }

@@ -9,20 +9,29 @@ from app.core.response import error, success
 
 app = FastAPI(title=settings.app_name)
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "https://campustree.ivano.bond",     # ← 新增
-        "https://ivano.bond",                 # ← 新增
-	    "https://campustreex.com",             # ← 新增2
-        "https://admin.campustreex.com",       # ← 新增2
-    ],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+cors_kwargs = {
+    "allow_credentials": True,
+    "allow_methods": ["*"],
+    "allow_headers": ["*"],
+}
+
+if settings.app_env == "development":
+    cors_kwargs["allow_origin_regex"] = r"http://localhost:\d+"
+    cors_kwargs["allow_origins"] = [
+        "https://campustree.ivano.bond",
+        "https://ivano.bond",
+        "https://campustreex.com",
+        "https://admin.campustreex.com",
+    ]
+else:
+    cors_kwargs["allow_origins"] = [
+        "https://campustree.ivano.bond",
+        "https://ivano.bond",
+        "https://campustreex.com",
+        "https://admin.campustreex.com",
+    ]
+
+app.add_middleware(CORSMiddleware, **cors_kwargs)
 
 app.include_router(api_router, prefix=settings.api_v1_prefix)
 

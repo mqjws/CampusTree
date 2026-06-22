@@ -71,7 +71,7 @@ def list_hot_topics(session: Session, limit: int = 8) -> list[Topic]:
     post_count = func.count(Post.id)
     statement = (
         select(Topic, post_count)
-        .join(Post, Post.topic_id == Topic.id)
+        .outerjoin(Post, Post.topic_id == Topic.id)
         .group_by(Topic.id)
         .order_by(desc(post_count), Topic.created_at.desc())
         .limit(limit)
