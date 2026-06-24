@@ -26,7 +26,7 @@ const pageSummary = computed(() => {
 })
 
 function goHome() {
-  router.push('/')
+  router.push('/home')
 }
 
 function goBack() {

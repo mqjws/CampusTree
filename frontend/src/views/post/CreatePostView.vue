@@ -17,6 +17,7 @@ interface CreatePostForm {
   topicName: string
   content: string
   allowComments: boolean
+  registeredOnly: boolean
 }
 
 interface PostDraft {
@@ -25,7 +26,16 @@ interface PostDraft {
   topicName: string
   content: string
   allowComments: boolean
+  registeredOnly: boolean
   savedAt: string
+}
+
+type ApiError = {
+  response?: {
+    data?: {
+      message?: string
+    }
+  }
 }
 
 const DRAFT_KEY_PREFIX = 'campus_tree_post_draft'
@@ -44,6 +54,7 @@ const form = reactive<CreatePostForm>({
   topicName: '',
   content: '',
   allowComments: true,
+  registeredOnly: false,
 })
 
 const draftKey = computed(() => {
@@ -60,10 +71,6 @@ const rules: FormRules<CreatePostForm> = {
     { min: 2, max: 60, message: '标题长度为 2 到 60 个字符', trigger: 'blur' },
   ],
   category: [{ required: true, message: '请选择分类', trigger: 'change' }],
-  content: [
-    { required: true, message: '请输入正文', trigger: 'blur' },
-    { min: 10, message: '正文至少输入 10 个字符', trigger: 'blur' },
-  ],
 }
 
 onMounted(() => {
@@ -98,15 +105,27 @@ onMounted(() => {
 
 function hasDraftContent(draft: Omit<PostDraft, 'savedAt'>): boolean {
   return Boolean(
-      draft.title.trim() ||
-      draft.content.trim() ||
-      draft.topicName.trim() ||
-      draft.category !== createPostCategories[0] ||
-      draft.allowComments !== true,
+    draft.title.trim() ||
+    draft.content.trim() ||
+    draft.topicName.trim() ||
+    draft.category !== createPostCategories[0] ||
+    draft.allowComments !== true ||
+    draft.registeredOnly !== false,
   )
 }
 
-const defaultTopics = ['生活', '校园', '吐槽', '学习', '美食', '情感', '考研', '就业', '二手', '失物招领']
+const defaultTopics = [
+  '生活',
+  '校园',
+  '吐槽',
+  '学习',
+  '美食',
+  '情感',
+  '考研',
+  '就业',
+  '二手',
+  '失物招领',
+]
 
 async function fetchTopicOptions() {
   loadingTopics.value = true
@@ -119,7 +138,13 @@ async function fetchTopicOptions() {
       .map((name, i) => ({ id: -(i + 1), name, post_count: 0, created_at: '', updated_at: '' }))
     topicOptions.value = [...defaults, ...data.items]
   } catch {
-    topicOptions.value = defaultTopics.map((name, i) => ({ id: -(i + 1), name, post_count: 0, created_at: '', updated_at: '' }))
+    topicOptions.value = defaultTopics.map((name, i) => ({
+      id: -(i + 1),
+      name,
+      post_count: 0,
+      created_at: '',
+      updated_at: '',
+    }))
   } finally {
     loadingTopics.value = false
   }
@@ -144,7 +169,10 @@ function readDraft(): PostDraft | null {
       return null
     }
 
-    return draft
+    return {
+      ...draft,
+      registeredOnly: typeof draft.registeredOnly === 'boolean' ? draft.registeredOnly : false,
+    }
   } catch {
     return null
   }
@@ -158,6 +186,7 @@ function restoreDraft(draft: PostDraft) {
   form.topicName = draft.topicName
   form.content = draft.content
   form.allowComments = draft.allowComments
+  form.registeredOnly = draft.registeredOnly
   draftSavedAt.value = draft.savedAt
 }
 
@@ -173,6 +202,7 @@ function handleSaveDraft() {
     topicName: form.topicName,
     content: form.content,
     allowComments: form.allowComments,
+    registeredOnly: form.registeredOnly,
   }
 
   if (!hasDraftContent(draft)) {
@@ -197,6 +227,14 @@ function handleDiscardDraft() {
   ElMessage.success('草稿已清除')
 }
 
+function getApiErrorMessage(err: unknown, fallback: string) {
+  if (typeof err !== 'object' || err === null || !('response' in err)) {
+    return fallback
+  }
+
+  return (err as ApiError).response?.data?.message || fallback
+}
+
 async function handleSubmit() {
   const isValid = await formRef.value?.validate().catch(() => false)
 
@@ -210,14 +248,14 @@ async function handleSubmit() {
       form.content,
       form.category,
       form.allowComments,
+      form.registeredOnly,
       form.topicName,
     )
     clearDraft()
     ElMessage.success('帖子创建成功')
-    await router.push('/')
-  } catch (err: any) {
-    const msg = err?.response?.data?.message || '帖子创建失败'
-    ElMessage.error(msg)
+    await router.push('/home')
+  } catch (err: unknown) {
+    ElMessage.error(getApiErrorMessage(err, '帖子创建失败'))
   }
 }
 </script>
@@ -281,6 +319,7 @@ async function handleSubmit() {
             maxlength="2000"
             show-word-limit
             resize="none"
+            placeholder="正文可留空"
           />
         </el-form-item>
 
@@ -290,6 +329,14 @@ async function handleSubmit() {
             <p>关闭后，帖子详情页将禁止发布新评论。</p>
           </div>
           <el-switch v-model="form.allowComments" />
+        </div>
+
+        <div class="create-card__options">
+          <div>
+            <h2>仅注册用户可见</h2>
+            <p>开启后，未登录访客不会在首页看到该帖子，也不能直接打开详情。</p>
+          </div>
+          <el-switch v-model="form.registeredOnly" />
         </div>
 
         <div class="create-card__actions">

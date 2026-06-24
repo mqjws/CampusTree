@@ -58,6 +58,20 @@ def test_register_user_duplicate_username(client: TestClient, session: Session):
     assert second_response.json()["message"] == "username already exists"
 
 
+def test_register_user_cannot_use_reserved_admin_username(
+    client: TestClient, session: Session
+):
+    create_test_email_code(session, "reserved-admin@example.com")
+
+    response = client.post(
+        "/api/v1/users/register",
+        json=register_payload(username="admin", email="reserved-admin@example.com"),
+    )
+
+    assert response.status_code == 400
+    assert response.json()["message"] == "username already exists"
+
+
 def test_register_user_invalid_email_code(client: TestClient):
     payload = register_payload(email="invalid-code@example.com")
     payload["email_code"] = "000000"
@@ -104,6 +118,45 @@ def test_login_user_failure(client: TestClient, session: Session):
     assert login_response.json()["message"] == "invalid account or password"
 
 
+def test_login_inactive_user_rejected(client: TestClient, session: Session):
+    create_test_email_code(session, "inactive@example.com")
+    client.post(
+        "/api/v1/users/register",
+        json=register_payload(username="inactiveuser", email="inactive@example.com"),
+    )
+    user = session.exec(select(User).where(User.username == "inactiveuser")).first()
+    assert user is not None
+    user.is_active = False
+    session.add(user)
+    session.commit()
+
+    login_response = client.post(
+        "/api/v1/users/login",
+        json={"account": "inactiveuser", "password": "password123"},
+    )
+
+    assert login_response.status_code == 403
+    assert login_response.json()["message"] == "user is banned"
+
+
+def test_default_admin_is_created_on_admin_login(client: TestClient, session: Session):
+    login_response = client.post(
+        "/api/v1/users/login",
+        json={"account": "admin", "password": "12345678910"},
+    )
+
+    assert login_response.status_code == 200
+    body = login_response.json()
+    assert body["data"]["user"]["username"] == "admin"
+    assert body["data"]["user"]["role"] == "admin"
+
+    admin = session.exec(select(User).where(User.username == "admin")).first()
+    assert admin is not None
+    assert admin.email == "admin@campustree.local"
+    assert admin.role == "admin"
+    assert admin.is_active is True
+
+
 def test_read_current_user_success(client: TestClient, session: Session):
     create_test_email_code(session, "me@example.com")
     client.post(
@@ -126,6 +179,23 @@ def test_read_current_user_success(client: TestClient, session: Session):
     assert body["code"] == 200
     assert body["data"]["username"] == "meuser"
     assert body["data"]["email"] == "me@example.com"
+
+
+def test_inactive_user_token_rejected(client: TestClient, session: Session):
+    token = authenticate_user(client, session, "inactiveauth", "inactiveauth@example.com")
+    user = session.exec(select(User).where(User.username == "inactiveauth")).first()
+    assert user is not None
+    user.is_active = False
+    session.add(user)
+    session.commit()
+
+    response = client.get(
+        "/api/v1/users/me",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 403
+    assert response.json()["message"] == "user is banned"
 
 
 def authenticate_user(client: TestClient, session: Session, username: str, email: str) -> str:

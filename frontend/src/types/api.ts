@@ -69,6 +69,7 @@ export interface PostDto {
   topic_id: number | null
   topic_name: string | null
   allow_comments: boolean
+  registered_only: boolean
   view_count: number
   comment_count: number
   like_count: number
@@ -83,6 +84,7 @@ export interface CreatePostPayload {
   category: string
   topic_name?: string | null
   allow_comments: boolean
+  registered_only: boolean
 }
 
 export interface TopicDto {
@@ -166,4 +168,48 @@ export interface SensitiveWordListDto {
 
 export interface SensitiveWordCreatePayload {
   word: string
+}
+
+export interface DeletePostDto {
+  deleted: boolean
+  post_id: number
+}
+
+export interface PostReportCreatePayload {
+  reason: string
+  description: string
+}
+
+export interface PostReportDto {
+  id: number
+  post_id: number
+  post_title: string | null
+  reporter_id: number
+  reporter_username: string | null
+  reason: string
+  description: string
+  status: string
+  created_at: string
+  updated_at: string
+}
+
+export interface PostReportListDto {
+  items: PostReportDto[]
+  total: number
+  page: number
+  size: number
+}
+
+export interface AdminUserListDto {
+  items: UserDto[]
+  total: number
+  page: number
+  size: number
+}
+
+export interface AdminPostListDto {
+  items: PostDto[]
+  total: number
+  page: number
+  size: number
 }

@@ -2,9 +2,12 @@ import request from './request'
 import type {
   ApiResponse,
   CreatePostPayload,
+  DeletePostDto,
   LikePostDto,
   PaginatedData,
   PostDto,
+  PostReportCreatePayload,
+  PostReportDto,
   UnlikePostDto,
 } from '@/types/api'
 
@@ -31,6 +34,22 @@ export async function getPostDetail(postId: number): Promise<PostDto> {
 
 export async function createPost(payload: CreatePostPayload): Promise<PostDto> {
   const response = await request.post<ApiResponse<PostDto>>('/posts', payload)
+  return response.data.data
+}
+
+export async function deletePost(postId: number): Promise<DeletePostDto> {
+  const response = await request.delete<ApiResponse<DeletePostDto>>(`/posts/${postId}`)
+  return response.data.data
+}
+
+export async function reportPost(
+  postId: number,
+  payload: PostReportCreatePayload,
+): Promise<PostReportDto> {
+  const response = await request.post<ApiResponse<PostReportDto>>(
+    `/posts/${postId}/reports`,
+    payload,
+  )
   return response.data.data
 }
 

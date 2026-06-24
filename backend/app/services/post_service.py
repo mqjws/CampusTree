@@ -33,6 +33,7 @@ def create_post(session: Session, post_create: PostCreate, author_id: int) -> Po
         content=post_create.content,
         category=post_create.category,
         allow_comments=post_create.allow_comments,
+        registered_only=post_create.registered_only,
         author_id=author_id,
         topic_id=topic.id if topic else None,
     )
@@ -66,6 +67,8 @@ def get_posts_paginated(
                 Post.content.ilike(keyword_pattern),
             )
         )
+    if current_user_id is None:
+        filters.append(Post.registered_only.is_(False))
 
     total_statement = select(func.count()).select_from(Post).where(*filters)
     total = session.exec(total_statement).one()

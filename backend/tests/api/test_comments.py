@@ -21,11 +21,12 @@ def create_user(session: Session, username: str = "commentuser") -> User:
     return user
 
 
-def create_post(session: Session, author: User) -> Post:
+def create_post(session: Session, author: User, registered_only: bool = False) -> Post:
     post = Post(
         title="Commented Post",
         content="This post receives comments",
         author_id=author.id,
+        registered_only=registered_only,
     )
     session.add(post)
     session.commit()
@@ -115,6 +116,25 @@ def test_list_comments_success(client: TestClient, session: Session):
         comment_one.id,
         comment_two.id,
     }
+
+
+def test_list_comments_for_registered_only_post_requires_login(
+    client: TestClient, session: Session
+):
+    user = create_user(session, "privatecomments")
+    post = create_post(session, user, registered_only=True)
+    create_comment(session, user, post, "Private comment")
+
+    guest_response = client.get(f"/api/v1/comments/posts/{post.id}/comments")
+    assert guest_response.status_code == 401
+    assert guest_response.json()["message"] == "login required to view this post"
+
+    auth_response = client.get(
+        f"/api/v1/comments/posts/{post.id}/comments",
+        headers=auth_headers(user),
+    )
+    assert auth_response.status_code == 200
+    assert auth_response.json()["data"]["total"] == 1
 
 
 def test_delete_comment_success(client: TestClient, session: Session):

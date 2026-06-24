@@ -2,6 +2,7 @@
 import { computed, onMounted } from 'vue'
 import { Setting, House, Plus, User } from '@element-plus/icons-vue'
 import { useRoute } from 'vue-router'
+import { useAuthStore } from '@/stores/modules/auth'
 import { useUserStore } from '@/stores/modules/user'
 
 type NavItem = {
@@ -12,12 +13,13 @@ type NavItem = {
 }
 
 const route = useRoute()
+const authStore = useAuthStore()
 const userStore = useUserStore()
 
-const navItems: NavItem[] = [
+const navItems = computed<NavItem[]>(() => [
   {
     label: '首页',
-    to: '/',
+    to: '/home',
     icon: House,
     variant: 'text',
   },
@@ -28,26 +30,28 @@ const navItems: NavItem[] = [
     variant: 'primary',
   },
   {
-    label: '我的',
-    to: '/profile',
+    label: authStore.isAuthenticated ? '我的' : '登录',
+    to: authStore.isAuthenticated ? '/profile' : '/login',
     icon: User,
     variant: 'text',
   },
-]
+])
 
 const isAdmin = computed(() => userStore.currentUser?.role === 'admin')
 
 const activePath = computed(() => route.path)
 
 onMounted(() => {
-  userStore.fetchCurrentUser().catch(() => undefined)
+  if (authStore.isAuthenticated) {
+    userStore.fetchCurrentUser().catch(() => undefined)
+  }
 })
 </script>
 
 <template>
   <header class="app-header">
     <div class="app-header__inner">
-      <RouterLink class="app-header__brand" to="/" aria-label="CampusTree 首页">
+      <RouterLink class="app-header__brand" to="/home" aria-label="CampusTree 首页">
         <span class="app-header__logo-mark">CT</span>
         <span class="app-header__brand-text">
           <strong>CampusTree</strong>
@@ -71,9 +75,9 @@ onMounted(() => {
         </RouterLink>
         <RouterLink
           v-if="isAdmin"
-          :to="'/admin/sensitive-words'"
+          :to="'/admin'"
           class="app-header__link app-header__link--text"
-          :class="{ 'is-active': activePath === '/admin/sensitive-words' }"
+          :class="{ 'is-active': activePath.startsWith('/admin') }"
         >
           <el-icon class="app-header__link-icon"><component :is="Setting" /></el-icon>
           <span>管理</span>

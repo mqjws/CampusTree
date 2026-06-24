@@ -23,7 +23,9 @@ from app.schemas.user import (
     UserStatsRead,
 )
 from app.services.user_service import (
+    DEFAULT_ADMIN_USERNAME,
     create_user,
+    ensure_default_admin,
     get_comments_by_user_id,
     get_posts_by_user_id,
     get_user_by_account,
@@ -49,6 +51,12 @@ router = APIRouter(prefix="/users", tags=["users"])
 
 @router.post("/register")
 def register_user(user_create: UserCreate, session: SessionDep):
+    if user_create.username == DEFAULT_ADMIN_USERNAME:
+        return JSONResponse(
+            status_code=400,
+            content=error(message="username already exists", code=400),
+        )
+
     if get_user_by_username(session, user_create.username):
         return JSONResponse(
             status_code=400,
@@ -109,11 +117,20 @@ def send_email_code(payload: EmailCodeCreate, session: SessionDep):
 
 @router.post("/login")
 def login_user(user_login: UserLogin, session: SessionDep):
+    if user_login.account == "admin":
+        ensure_default_admin(session)
+
     user = get_user_by_account(session, user_login.account)
     if not user or not verify_password(user_login.password, user.hashed_password):
         return JSONResponse(
             status_code=400,
             content=error(message="invalid account or password", code=400),
+        )
+
+    if not user.is_active:
+        return JSONResponse(
+            status_code=403,
+            content=error(message="user is banned", code=403),
         )
 
     user_read = UserRead.model_validate(user)

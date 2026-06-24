@@ -31,22 +31,28 @@ export function mapUserToProfile(user: UserDto | null, stats?: ProfileStats): Pr
     nickname: user.nickname,
     joinedAt: formatFullTime(user.created_at),
     tagline: '当前用户数据与统计信息均来自真实接口。',
-      stats: stats || {
-        posts: 0,
-        comments: 0,
-        likes: 0,
-        views: 0,
-        latestPostAt: null,
-        latestCommentAt: null,
-      },
+    stats: stats || {
+      posts: 0,
+      comments: 0,
+      likes: 0,
+      views: 0,
+      latestPostAt: null,
+      latestCommentAt: null,
+    },
   }
 }
 
 export function mapPostDtoToRecord(post: PostDto): PostRecord {
+  const summary = post.content.trim()
+    ? post.content.length > 120
+      ? `${post.content.slice(0, 120)}...`
+      : post.content
+    : '暂无正文'
+
   return {
     id: post.id,
     title: post.title,
-    summary: post.content.length > 120 ? `${post.content.slice(0, 120)}...` : post.content,
+    summary,
     content: post.content,
     category: post.category,
     relativeTime: formatRelativeTime(post.created_at),
@@ -56,6 +62,7 @@ export function mapPostDtoToRecord(post: PostDto): PostRecord {
     commentCount: post.comment_count,
     likedByCurrentUser: post.liked_by_current_user,
     allowComments: post.allow_comments,
+    registeredOnly: post.registered_only,
     topicId: post.topic_id,
     topicName: post.topic_name,
     author: {

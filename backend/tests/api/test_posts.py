@@ -28,6 +28,7 @@ def create_post(
     content: str = "This is a test post",
     view_count: int = 0,
     category: str = "未分类",
+    registered_only: bool = False,
 ) -> Post:
     post = Post(
         title=title,
@@ -35,6 +36,7 @@ def create_post(
         category=category,
         author_id=author.id,
         view_count=view_count,
+        registered_only=registered_only,
     )
     session.add(post)
     session.commit()
@@ -75,6 +77,7 @@ def test_create_post_success(client: TestClient, session: Session):
     assert body["data"]["category"] == "学习"
     assert body["data"]["author_id"] == user.id
     assert body["data"]["allow_comments"] is True
+    assert body["data"]["registered_only"] is False
     assert body["data"]["view_count"] == 0
     assert body["data"]["comment_count"] == 0
     assert body["data"]["like_count"] == 0
@@ -82,6 +85,21 @@ def test_create_post_success(client: TestClient, session: Session):
     post = session.exec(select(Post).where(Post.title == "New Post")).first()
     assert post is not None
     assert post.category == "学习"
+
+
+def test_create_post_allows_empty_content(client: TestClient, session: Session):
+    user = create_user(session, "emptycontent")
+
+    response = client.post(
+        "/api/v1/posts",
+        json={"title": "Empty Content", "content": ""},
+        headers=auth_headers(user),
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["data"]["title"] == "Empty Content"
+    assert body["data"]["content"] == ""
 
 
 def test_create_post_can_disable_comments(client: TestClient, session: Session):
@@ -104,6 +122,28 @@ def test_create_post_can_disable_comments(client: TestClient, session: Session):
     post = session.exec(select(Post).where(Post.title == "No Comments")).first()
     assert post is not None
     assert post.allow_comments is False
+
+
+def test_create_post_can_be_registered_only(client: TestClient, session: Session):
+    user = create_user(session, "registeredonlyauthor")
+
+    response = client.post(
+        "/api/v1/posts",
+        json={
+            "title": "Members Only",
+            "content": "Only logged in users can see this",
+            "registered_only": True,
+        },
+        headers=auth_headers(user),
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["data"]["registered_only"] is True
+
+    post = session.exec(select(Post).where(Post.title == "Members Only")).first()
+    assert post is not None
+    assert post.registered_only is True
 
 
 def test_list_posts_success(client: TestClient, session: Session):
@@ -129,6 +169,33 @@ def test_list_posts_success(client: TestClient, session: Session):
         for item in body["data"]["items"]
     }
     assert counts_by_post_id == {post_one.id: (2, 1), post_two.id: (0, 1)}
+
+
+def test_list_posts_hides_registered_only_from_guests(
+    client: TestClient, session: Session
+):
+    user = create_user(session, "visibilityauthor")
+    public_post = create_post(session, user, title="Public Post")
+    private_post = create_post(
+        session,
+        user,
+        title="Registered Only Post",
+        registered_only=True,
+    )
+
+    guest_response = client.get("/api/v1/posts?page=1&size=10")
+    assert guest_response.status_code == 200
+    guest_body = guest_response.json()
+    assert guest_body["data"]["total"] == 1
+    assert [item["id"] for item in guest_body["data"]["items"]] == [public_post.id]
+
+    auth_response = client.get(
+        "/api/v1/posts?page=1&size=10",
+        headers=auth_headers(user),
+    )
+    assert auth_response.status_code == 200
+    auth_ids = {item["id"] for item in auth_response.json()["data"]["items"]}
+    assert auth_ids == {public_post.id, private_post.id}
 
 
 def test_list_posts_can_filter_by_category(client: TestClient, session: Session):
@@ -231,6 +298,54 @@ def test_read_post_marks_current_user_like(client: TestClient, session: Session)
     body = response.json()
     assert body["data"]["liked_by_current_user"] is True
     assert body["data"]["like_count"] == 1
+
+
+def test_read_registered_only_post_requires_login(
+    client: TestClient, session: Session
+):
+    user = create_user(session, "privatepostauthor")
+    post = create_post(session, user, title="Private Detail", registered_only=True)
+
+    guest_response = client.get(f"/api/v1/posts/{post.id}")
+    assert guest_response.status_code == 401
+    assert guest_response.json()["message"] == "login required to view this post"
+
+    auth_response = client.get(
+        f"/api/v1/posts/{post.id}",
+        headers=auth_headers(user),
+    )
+    assert auth_response.status_code == 200
+    assert auth_response.json()["data"]["registered_only"] is True
+
+
+def test_report_post_success_and_duplicate_pending_blocked(
+    client: TestClient, session: Session
+):
+    author = create_user(session, "reportpostauthor")
+    reporter = create_user(session, "reporter")
+    post = create_post(session, author, title="Reportable Post")
+
+    response = client.post(
+        f"/api/v1/posts/{post.id}/reports",
+        json={"reason": "广告营销", "description": "重复广告"},
+        headers=auth_headers(reporter),
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["data"]["post_id"] == post.id
+    assert body["data"]["reporter_id"] == reporter.id
+    assert body["data"]["reason"] == "广告营销"
+    assert body["data"]["status"] == "pending"
+
+    duplicate_response = client.post(
+        f"/api/v1/posts/{post.id}/reports",
+        json={"reason": "广告营销", "description": "重复广告"},
+        headers=auth_headers(reporter),
+    )
+
+    assert duplicate_response.status_code == 400
+    assert duplicate_response.json()["message"] == "report already submitted"
 
 
 def test_update_post_success(client: TestClient, session: Session):

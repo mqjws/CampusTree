@@ -30,6 +30,7 @@ function handleSelect(id: number) {
       </div>
 
       <div class="post-card__tags">
+        <el-tag v-if="post.registeredOnly" effect="plain" round>注册用户可见</el-tag>
         <el-tag v-if="post.topicName" effect="plain" round># {{ post.topicName }}</el-tag>
         <el-tag effect="plain" round>{{ post.category }}</el-tag>
       </div>

@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Query
 from fastapi.responses import JSONResponse
 
-from app.api.deps import CurrentUserDep, SessionDep
+from app.api.deps import CurrentUserDep, OptionalCurrentUserDep, SessionDep
 from app.core.response import error, success
 from app.schemas.comment import CommentCreate, CommentListRead, CommentRead, CommentUpdate
 from app.services.comment_service import (
@@ -60,6 +60,7 @@ def create_comment_api(
 def list_comments_by_post(
     post_id: int,
     session: SessionDep,
+    current_user: OptionalCurrentUserDep,
     page: Annotated[int, Query(ge=1)] = 1,
     size: Annotated[int, Query(ge=1, le=100)] = 10,
 ):
@@ -69,6 +70,12 @@ def list_comments_by_post(
         return JSONResponse(
             status_code=404,
             content=error(message="post not found", code=404),
+        )
+
+    if post.registered_only and current_user is None:
+        return JSONResponse(
+            status_code=401,
+            content=error(message="login required to view this post", code=401),
         )
 
     items, total = get_comments_by_post_paginated(

@@ -8,6 +8,7 @@ if TYPE_CHECKING:
     from app.models.comment import Comment
     from app.models.like import Like
     from app.models.post import Post
+    from app.models.post_report import PostReport
 
 
 def utc_now() -> datetime:
@@ -41,3 +42,4 @@ class User(SQLModel, table=True):
     posts: list["Post"] = Relationship(back_populates="author", cascade_delete=True)
     comments: list["Comment"] = Relationship(back_populates="author", cascade_delete=True)
     likes: list["Like"] = Relationship(back_populates="user", cascade_delete=True)
+    reports: list["PostReport"] = Relationship(back_populates="reporter", cascade_delete=True)

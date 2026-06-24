@@ -7,16 +7,26 @@ const homePage = () => import('@/views/home/HomeView.vue')
 const postDetailPage = () => import('@/views/post/PostDetailView.vue')
 const createPostPage = () => import('@/views/post/CreatePostView.vue')
 const profilePage = () => import('@/views/profile/ProfileView.vue')
+const adminPage = () => import('@/views/admin/AdminDashboardView.vue')
 const adminSensitiveWordsPage = () => import('@/views/admin/AdminSensitiveWordsView.vue')
 
 export const routes: RouteRecordRaw[] = [
   {
     path: '/',
+    name: 'LandingLogin',
+    component: loginPage,
+    meta: {
+      title: '登录 - CampusTree',
+      requiresAuth: false,
+    },
+  },
+  {
+    path: '/home',
     name: 'Home',
     component: homePage,
     meta: {
       title: 'CampusTree',
-      requiresAuth: true,
+      requiresAuth: false,
     },
   },
   {
@@ -43,7 +53,7 @@ export const routes: RouteRecordRaw[] = [
     component: postDetailPage,
     meta: {
       title: '帖子详情 - CampusTree',
-      requiresAuth: true,
+      requiresAuth: false,
     },
   },
   {
@@ -102,12 +112,23 @@ export const routes: RouteRecordRaw[] = [
     },
   },
   {
+    path: '/admin',
+    name: 'Admin',
+    component: adminPage,
+    meta: {
+      title: '管理后台 - CampusTree',
+      requiresAuth: true,
+      requiresAdmin: true,
+    },
+  },
+  {
     path: '/admin/sensitive-words',
     name: 'AdminSensitiveWords',
     component: adminSensitiveWordsPage,
     meta: {
       title: '敏感词管理 - CampusTree',
       requiresAuth: true,
+      requiresAdmin: true,
     },
   },
   {

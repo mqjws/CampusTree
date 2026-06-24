@@ -21,6 +21,7 @@ export const mockPosts: PostRecord[] = [
     commentCount: 18,
     likedByCurrentUser: false,
     allowComments: true,
+    registeredOnly: false,
     topicId: 1,
     topicName: '图书馆座位',
     author: {
@@ -43,6 +44,7 @@ export const mockPosts: PostRecord[] = [
     commentCount: 11,
     likedByCurrentUser: false,
     allowComments: true,
+    registeredOnly: false,
     topicId: 2,
     topicName: '食堂测评',
     author: {
@@ -65,6 +67,7 @@ export const mockPosts: PostRecord[] = [
     commentCount: 9,
     likedByCurrentUser: false,
     allowComments: true,
+    registeredOnly: false,
     topicId: 3,
     topicName: '社团招新',
     author: {
@@ -165,7 +168,8 @@ export const mockNotices: CampusNotice[] = [
   {
     id: 1,
     title: '欢迎来到 CampusTree',
-    content: '这里适合分享校园里的学习经验、生活发现和临时想法。发帖时请选择合适分类，也可以添加一个具体话题。',
+    content:
+      '这里适合分享校园里的学习经验、生活发现和临时想法。发帖时请选择合适分类，也可以添加一个具体话题。',
   },
   {
     id: 2,

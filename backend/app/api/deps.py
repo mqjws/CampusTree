@@ -53,6 +53,12 @@ def get_current_user(
             detail=error(message="invalid token", code=401),
         )
 
+    if not user.is_active:
+        raise HTTPException(
+            status_code=403,
+            detail=error(message="user is banned", code=403),
+        )
+
     return user
 
 

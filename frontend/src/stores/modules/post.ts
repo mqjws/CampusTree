@@ -56,6 +56,7 @@ export const usePostStore = defineStore('post', () => {
     content: string,
     category: string,
     allowComments = true,
+    registeredOnly = false,
     topicName = '',
   ) {
     creating.value = true
@@ -68,6 +69,7 @@ export const usePostStore = defineStore('post', () => {
         category,
         topic_name: topicName.trim() || null,
         allow_comments: allowComments,
+        registered_only: registeredOnly,
       })
       const mapped = mapPostDtoToRecord(post)
       posts.value.unshift(mapped)
@@ -91,10 +93,7 @@ export const usePostStore = defineStore('post', () => {
     })
   }
 
-  function updatePostCount(
-    postId: number,
-    update: (post: PostRecord) => void,
-  ) {
+  function updatePostCount(postId: number, update: (post: PostRecord) => void) {
     posts.value.forEach((post) => {
       if (post.id === postId) {
         update(post)
@@ -122,6 +121,14 @@ export const usePostStore = defineStore('post', () => {
     })
   }
 
+  async function deletePost(postId: number) {
+    await postApi.deletePost(postId)
+    posts.value = posts.value.filter((post) => post.id !== postId)
+    if (currentPost.value?.id === postId) {
+      currentPost.value = null
+    }
+  }
+
   return {
     posts,
     currentPost,
@@ -132,6 +139,7 @@ export const usePostStore = defineStore('post', () => {
     fetchPosts,
     fetchPostDetail,
     createPost,
+    deletePost,
     incrementCommentCount,
     like,
     unlike,

@@ -5,7 +5,7 @@ import { useRoute } from 'vue-router'
 const route = useRoute()
 
 const items = [
-  { label: '首页', to: '/', icon: House },
+  { label: '首页', to: '/home', icon: House },
   { label: '发布', to: '/create', icon: Plus },
   { label: '我的', to: '/profile', icon: User },
 ]

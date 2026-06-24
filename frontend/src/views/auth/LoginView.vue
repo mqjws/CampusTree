@@ -63,11 +63,16 @@ async function handleSubmit() {
     })
 
     ElMessage.success('登录成功')
-    const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/'
+    const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/home'
     await router.push(redirect)
   } catch {
     ElMessage.error('登录失败，请检查账号或密码')
   }
+}
+
+async function handleGuestAccess() {
+  authStore.clearAuth()
+  await router.push('/home')
 }
 </script>
 
@@ -119,6 +124,10 @@ async function handleSubmit() {
           @click="handleSubmit"
         >
           登录 CampusTree
+        </el-button>
+
+        <el-button class="auth-card__guest" size="large" plain @click="handleGuestAccess">
+          以访客模式访问
         </el-button>
       </el-form>
     </section>
@@ -172,6 +181,11 @@ async function handleSubmit() {
 
 .auth-card__submit {
   width: 100%;
+}
+
+.auth-card__guest {
+  width: 100%;
+  margin: var(--space-12) 0 0;
 }
 
 @media (max-width: 767px) {

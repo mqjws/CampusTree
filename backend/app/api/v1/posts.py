@@ -6,6 +6,11 @@ from fastapi.responses import JSONResponse
 from app.api.deps import CurrentUserDep, OptionalCurrentUserDep, SessionDep
 from app.core.response import error, success
 from app.schemas.post import PostCreate, PostListRead, PostRead, PostUpdate
+from app.schemas.post_report import PostReportCreate, PostReportRead
+from app.services.post_report_service import (
+    DuplicatePendingReportError,
+    create_post_report,
+)
 from app.services.post_service import (
     create_post,
     delete_post,
@@ -75,7 +80,7 @@ def read_post(
     session: SessionDep,
     current_user: OptionalCurrentUserDep,
 ):
-    post = increment_post_view_count(
+    post = get_post_by_id(
         session,
         post_id,
         current_user_id=current_user.id if current_user else None,
@@ -86,7 +91,49 @@ def read_post(
             content=error(message="post not found", code=404),
         )
 
+    if post.registered_only and current_user is None:
+        return JSONResponse(
+            status_code=401,
+            content=error(message="login required to view this post", code=401),
+        )
+
+    post = increment_post_view_count(
+        session,
+        post_id,
+        current_user_id=current_user.id if current_user else None,
+    )
+
     return success(PostRead.model_validate(post).model_dump(mode="json"))
+
+
+@router.post("/{post_id}/reports")
+def report_post_api(
+    post_id: int,
+    payload: PostReportCreate,
+    session: SessionDep,
+    current_user: CurrentUserDep,
+):
+    post = get_post_by_id(session, post_id, current_user_id=current_user.id)
+    if post is None:
+        return JSONResponse(
+            status_code=404,
+            content=error(message="post not found", code=404),
+        )
+
+    try:
+        report = create_post_report(
+            session,
+            payload,
+            post_id=post_id,
+            reporter_id=current_user.id,
+        )
+    except DuplicatePendingReportError:
+        return JSONResponse(
+            status_code=400,
+            content=error(message="report already submitted", code=400),
+        )
+
+    return success(PostReportRead.model_validate(report).model_dump(mode="json"))
 
 
 @router.patch("/{post_id}")

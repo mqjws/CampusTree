@@ -1,17 +1,20 @@
 <script setup lang="ts">
 import { Bell, Close, Search, TrendCharts } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import PostCard from '@/components/post/PostCard.vue'
 import * as topicApi from '@/api/topic'
 import { createPostCategories, mockNotices } from '@/mock/community'
+import { useAuthStore } from '@/stores/modules/auth'
 import { usePostStore } from '@/stores/modules/post'
 import { useUserStore } from '@/stores/modules/user'
 import type { PostSort } from '@/api/post'
 import type { TopicDto } from '@/types/api'
 
 const router = useRouter()
+const authStore = useAuthStore()
 const postStore = usePostStore()
 const userStore = useUserStore()
 const sortMode = ref<PostSort>('latest')
@@ -37,9 +40,7 @@ const categoryOptions = [
 const activeKeyword = computed(() => searchKeyword.value.trim())
 const hasActiveFilters = computed(
   () =>
-    Boolean(activeKeyword.value) ||
-    Boolean(activeCategory.value) ||
-    activeTopicId.value !== null,
+    Boolean(activeKeyword.value) || Boolean(activeCategory.value) || activeTopicId.value !== null,
 )
 
 function openPost(id: number) {
@@ -50,7 +51,9 @@ onMounted(() => {
   loadSearchHistory()
   fetchPostList()
   fetchHotTopics()
-  userStore.fetchCurrentUser().catch(() => undefined)
+  if (authStore.isAuthenticated) {
+    userStore.fetchCurrentUser().catch(() => undefined)
+  }
 })
 
 watch([sortMode, activeCategory, activeTopicId], () => {
@@ -134,7 +137,10 @@ function loadSearchHistory() {
 }
 
 function saveSearchKeyword(keyword: string) {
-  searchHistory.value = [keyword, ...searchHistory.value.filter((item) => item !== keyword)].slice(0, 8)
+  searchHistory.value = [keyword, ...searchHistory.value.filter((item) => item !== keyword)].slice(
+    0,
+    8,
+  )
   localStorage.setItem(searchHistoryKey, JSON.stringify(searchHistory.value))
 }
 
@@ -146,6 +152,19 @@ function clearSearchHistory() {
 function applyHistoryKeyword(keyword: string) {
   searchKeyword.value = keyword
   handleSearch()
+}
+
+async function handleCreatePost() {
+  if (!authStore.isAuthenticated) {
+    ElMessage.warning('请先登录后再发布内容')
+    await router.push({
+      path: '/login',
+      query: { redirect: '/create' },
+    })
+    return
+  }
+
+  await router.push('/create')
 }
 </script>
 
@@ -189,9 +208,7 @@ function applyHistoryKeyword(keyword: string) {
         </el-autocomplete>
         <el-button type="primary" size="large" @click="handleSearch">搜索</el-button>
       </div>
-      <el-button type="primary" size="large" @click="router.push('/create')">
-        发布一条新内容
-      </el-button>
+      <el-button type="primary" size="large" @click="handleCreatePost"> 发布一条新内容 </el-button>
     </section>
 
     <section v-if="hasActiveFilters || searchHistory.length > 0" class="home-search-panel">
@@ -240,10 +257,7 @@ function applyHistoryKeyword(keyword: string) {
             <el-icon><TrendCharts /></el-icon>
           </div>
           <div class="topic-list">
-            <el-empty
-              v-if="!loadingTopics && hotTopics.length === 0"
-              description="暂无热门话题"
-            />
+            <el-empty v-if="!loadingTopics && hotTopics.length === 0" description="暂无热门话题" />
             <button
               v-for="topic in hotTopics"
               v-else

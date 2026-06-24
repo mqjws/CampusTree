@@ -7,6 +7,7 @@ from sqlmodel import Field, Relationship, SQLModel
 if TYPE_CHECKING:
     from app.models.comment import Comment
     from app.models.like import Like
+    from app.models.post_report import PostReport
     from app.models.topic import Topic
     from app.models.user import User
 
@@ -25,6 +26,10 @@ class Post(SQLModel, table=True):
     allow_comments: bool = Field(
         default=True,
         sa_column=Column(Boolean, nullable=False, server_default="true"),
+    )
+    registered_only: bool = Field(
+        default=False,
+        sa_column=Column(Boolean, nullable=False, server_default="false"),
     )
     view_count: int = Field(default=0, ge=0, nullable=False)
     author_id: int = Field(
@@ -50,3 +55,4 @@ class Post(SQLModel, table=True):
     topic: Optional["Topic"] = Relationship(back_populates="posts")
     comments: list["Comment"] = Relationship(back_populates="post", cascade_delete=True)
     likes: list["Like"] = Relationship(back_populates="post", cascade_delete=True)
+    reports: list["PostReport"] = Relationship(back_populates="post", cascade_delete=True)

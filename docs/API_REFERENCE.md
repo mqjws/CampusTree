@@ -379,6 +379,7 @@ Response body:
         "topic_id": 1,
         "topic_name": "图书馆座位",
         "allow_comments": true,
+        "registered_only": false,
         "view_count": 12,
         "comment_count": 3,
         "like_count": 5,
@@ -407,7 +408,8 @@ Request body:
 ```json
 {
   "title": "Hello",
-  "content": "CampusTree post content"
+  "content": "CampusTree post content",
+  "registered_only": false
 }
 ```
 
@@ -434,6 +436,7 @@ Errors:
 
 | Status | Message |
 |---:|---|
+| 401 | `login required to view this post` |
 | 404 | `post not found` |
 
 ### Update Post
@@ -449,7 +452,8 @@ Request body:
 ```json
 {
   "title": "Updated title",
-  "content": "Updated content"
+  "content": "Updated content",
+  "registered_only": true
 }
 ```
 
@@ -461,6 +465,33 @@ Errors:
 |---:|---|
 | 401 | Authentication error |
 | 403 | `forbidden` |
+| 404 | `post not found` |
+
+### Report Post
+
+```http
+POST /api/v1/posts/{post_id}/reports
+```
+
+JWT: Yes
+
+Request body:
+
+```json
+{
+  "reason": "广告营销",
+  "description": "重复发布广告内容"
+}
+```
+
+Response body: `PostReportRead`
+
+Errors:
+
+| Status | Message |
+|---:|---|
+| 400 | `report already submitted` |
+| 401 | Authentication error |
 | 404 | `post not found` |
 | 422 | Validation error |
 
@@ -703,6 +734,87 @@ Errors:
 | 400 | `post not liked` |
 | 401 | Authentication error |
 | 404 | `post not found` |
+
+### List Users
+
+```http
+GET /api/v1/admin/users?page=1&size=20&keyword=alice
+```
+
+Response body:
+
+```json
+{
+  "items": [],
+  "total": 0,
+  "page": 1,
+  "size": 20
+}
+```
+
+### Ban Or Unban User
+
+```http
+PATCH /api/v1/admin/users/{user_id}/status
+```
+
+Request body:
+
+```json
+{
+  "is_active": false
+}
+```
+
+### Delete User
+
+```http
+DELETE /api/v1/admin/users/{user_id}
+```
+
+### List All Posts
+
+```http
+GET /api/v1/admin/posts?page=1&size=20&keyword=library
+```
+
+### Delete Any Post
+
+```http
+DELETE /api/v1/admin/posts/{post_id}
+```
+
+### List Reports
+
+```http
+GET /api/v1/admin/reports?page=1&size=20&status=pending
+```
+
+### Update Report Status
+
+```http
+PATCH /api/v1/admin/reports/{report_id}
+```
+
+Request body:
+
+```json
+{
+  "status": "resolved"
+}
+```
+
+Allowed values: `pending`, `resolved`, `ignored`.
+
+### Sensitive Word Management
+
+Existing sensitive word APIs remain available:
+
+```http
+GET /api/v1/admin/sensitive-words
+POST /api/v1/admin/sensitive-words
+DELETE /api/v1/admin/sensitive-words/{word_id}
+```
 
 ## Frontend Axios Examples
 

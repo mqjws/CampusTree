@@ -5,6 +5,7 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import {
   Calendar,
   ChatDotRound,
+  Delete,
   EditPen,
   MessageBox,
   Pointer,
@@ -19,7 +20,9 @@ import CommentList from '@/components/comment/CommentList.vue'
 import PostCard from '@/components/post/PostCard.vue'
 import { useAuthStore } from '@/stores/modules/auth'
 import { useUserStore } from '@/stores/modules/user'
+import * as postApi from '@/api/post'
 import * as userApi from '@/api/user'
+import type { PostRecord } from '@/types/content'
 import { formatFullTime, formatRelativeTime } from '@/utils/format'
 
 interface PasswordForm {
@@ -133,7 +136,10 @@ const activeDays = computed(() => {
 })
 
 onMounted(() => {
-  userStore.fetchCurrentUser().then(syncProfileForm).catch(() => undefined)
+  userStore
+    .fetchCurrentUser()
+    .then(syncProfileForm)
+    .catch(() => undefined)
   userStore.fetchMyPosts().catch(() => undefined)
   userStore.fetchMyComments().catch(() => undefined)
   userStore.fetchMyStats().catch(() => undefined)
@@ -244,6 +250,22 @@ async function handleLogout() {
     router.push('/login')
   } catch {
     return
+  }
+}
+
+async function handleDeleteMyPost(post: PostRecord) {
+  try {
+    await ElMessageBox.confirm(`确认删除帖子「${post.title}」？`, '删除确认', {
+      type: 'warning',
+      confirmButtonText: '删除',
+      cancelButtonText: '取消',
+    })
+    await postApi.deletePost(post.id)
+    userStore.myPosts = userStore.myPosts.filter((item) => item.id !== post.id)
+    await userStore.fetchMyStats().catch(() => undefined)
+    ElMessage.success('帖子已删除')
+  } catch {
+    // 用户取消或删除失败
   }
 }
 </script>
@@ -460,13 +482,16 @@ async function handleLogout() {
 
     <section v-else-if="section === 'posts'" class="profile-panels">
       <el-empty v-if="userStore.myPosts.length === 0" description="当前用户还没有发布帖子" />
-      <PostCard
-        v-for="post in userStore.myPosts"
-        v-else
-        :key="post.id"
-        :post="post"
-        @select="openPost"
-      />
+      <div v-else class="profile-post-list">
+        <article v-for="post in userStore.myPosts" :key="post.id" class="profile-post-item">
+          <PostCard :post="post" @select="openPost" />
+          <div class="profile-post-item__actions">
+            <el-button type="danger" plain :icon="Delete" @click="handleDeleteMyPost(post)">
+              删除
+            </el-button>
+          </div>
+        </article>
+      </div>
     </section>
 
     <section v-else-if="section === 'comments'" class="profile-panels">
@@ -629,6 +654,21 @@ async function handleLogout() {
 .profile-settings {
   display: grid;
   gap: var(--space-16);
+}
+
+.profile-post-list {
+  display: grid;
+  gap: var(--space-16);
+}
+
+.profile-post-item {
+  display: grid;
+  gap: var(--space-8);
+}
+
+.profile-post-item__actions {
+  display: flex;
+  justify-content: flex-end;
 }
 
 .profile-overview-grid {

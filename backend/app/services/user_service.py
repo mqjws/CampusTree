@@ -10,6 +10,10 @@ from app.models.post import Post
 from app.models.user import User
 from app.schemas.user import UserCreate
 
+DEFAULT_ADMIN_USERNAME = "admin"
+DEFAULT_ADMIN_EMAIL = "admin@campustree.local"
+DEFAULT_ADMIN_PASSWORD = "12345678910"
+
 
 def _post_with_counts(post: Post, comment_count: int, like_count: int) -> Post:
     object.__setattr__(post, "comment_count", int(comment_count))
@@ -202,3 +206,35 @@ def update_user_profile(session: Session, user: User, nickname: str) -> User:
     session.commit()
     session.refresh(user)
     return user
+
+
+def ensure_default_admin(session: Session) -> User:
+    admin = get_user_by_username(session, DEFAULT_ADMIN_USERNAME)
+    if admin is None:
+        admin = User(
+            username=DEFAULT_ADMIN_USERNAME,
+            nickname=DEFAULT_ADMIN_USERNAME,
+            email=DEFAULT_ADMIN_EMAIL,
+            hashed_password=get_password_hash(DEFAULT_ADMIN_PASSWORD),
+            role="admin",
+            is_active=True,
+        )
+        session.add(admin)
+        session.commit()
+        session.refresh(admin)
+        return admin
+
+    changed = False
+    if admin.role != "admin":
+        admin.role = "admin"
+        changed = True
+    if not admin.is_active:
+        admin.is_active = True
+        changed = True
+
+    if changed:
+        session.add(admin)
+        session.commit()
+        session.refresh(admin)
+
+    return admin

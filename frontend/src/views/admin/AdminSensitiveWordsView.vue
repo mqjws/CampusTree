@@ -117,13 +117,7 @@ async function handleDelete(word: SensitiveWordDto) {
         <div v-else class="word-table">
           <div v-for="word in words" :key="word.id" class="word-table__row">
             <span class="word-table__text">{{ word.word }}</span>
-            <el-button
-              type="danger"
-              :icon="Delete"
-              size="small"
-              plain
-              @click="handleDelete(word)"
-            >
+            <el-button type="danger" :icon="Delete" size="small" plain @click="handleDelete(word)">
               删除
             </el-button>
           </div>
